@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>lol1.moe · 萝莉图鉴 | 小小身影，大大世界</title>
+  <meta name="description" content="lol1.moe 是一本二次元可爱角色的小小图鉴：12 位住在幻想里的小小居民，纯静态、全年龄、无追踪。">
+  <meta name="theme-color" content="#fff8f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1420" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://lol1.moe/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="lol1.moe · 萝莉图鉴">
+  <meta property="og:title" content="lol1.moe · 萝莉图鉴 | 小小身影，大大世界">
+  <meta property="og:description" content="12 位住在幻想里的小小居民，一本全年龄的可爱角色图鉴。">
+  <meta property="og:url" content="https://lol1.moe/">
+  <meta property="og:image" content="https://lol1.moe/assets/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "lol1.moe · 萝莉图鉴",
+    "url": "https://lol1.moe/",
+    "description": "一本二次元可爱角色的小小图鉴。",
+    "inLanguage": "zh-CN"
+  }
+  </script>
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    (function () {
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        var saved = localStorage.getItem('lol1:theme');
+        var dark = q ? q === 'dark' : saved ? saved === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#gallery">跳到图鉴</a>
+
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="logo" href="./" aria-label="lol1.moe 首页">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M16 5c2 3 2 6 0 8-2-2-2-5 0-8Z" fill="#ff8ab5" stroke="none"/>
+            <path d="M27 16c-3 2-6 2-8 0 2-2 5-2 8 0Z" fill="#ffb7d5" stroke="none"/>
+            <path d="M16 27c-2-3-2-6 0-8 2 2 2 5 0 8Z" fill="#b79cff" stroke="none"/>
+            <path d="M5 16c3-2 6-2 8 0-2 2-5 2-8 0Z" fill="#9fe3cf" stroke="none"/>
+          </g>
+          <circle cx="16" cy="16" r="3.2" fill="#ffd166"/>
+        </svg>
+        <span class="logo__word">lol1<i>.moe</i></span>
+        <span class="logo__badge">萝莉图鉴</span>
+      </a>
+
+      <nav class="nav__links" aria-label="主导航">
+        <a class="nav__link" href="#gallery">图鉴</a>
+        <a class="nav__link" href="#about">关于</a>
+        <a class="nav__link" href="#policy">内容政策</a>
+      </nav>
+
+      <a class="icon-btn" href="https://github.com/greenhandzdl/lol1-pages" target="_blank" rel="noopener" aria-label="GitHub 源码">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.7.08-.7 1.17.08 1.79 1.2 1.79 1.2 1.04 1.78 2.73 1.27 3.4.97.1-.75.4-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.2-1.5 3.17-1.18 3.17-1.18.63 1.59.23 2.76.12 3.05.74.8 1.19 1.82 1.19 3.08 0 4.41-2.69 5.38-5.25 5.67.41.35.78 1.05.78 2.12v3.14c0 .31.2.67.8.56A11.5 11.5 0 0 0 23.5 12A11.5 11.5 0 0 0 12 .5Z"/></svg>
+      </a>
+      <button class="icon-btn theme-toggle" id="theme-toggle" type="button" aria-label="切换明暗主题" aria-pressed="false">
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <canvas id="petals" aria-hidden="true"></canvas>
+      <div class="wrap hero__inner">
+        <div class="hero__copy">
+          <p class="hero__eyebrow"><span class="dot"></span> A tiny atlas of moe</p>
+          <h1>小小的身影，<br><span class="grad">大大的世界。</span></h1>
+          <p class="hero__lead">这里是 12 位住在幻想里的小小居民：樱花、星星、薄荷与奶油，还有一整个夏天的风。她们没有拯救世界，只是在认真地、可爱地生活着。</p>
+          <div class="hero__actions">
+            <button class="btn btn--primary" id="random-btn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+              遇见今日的推し
+            </button>
+            <a class="btn btn--ghost" href="#gallery">浏览图鉴</a>
+          </div>
+          <div class="hero__meta">
+            <div class="hero__stat"><b>12</b><span>位小小居民</span></div>
+            <div class="hero__stat"><b>100%</b><span>全年龄 · SFW</span></div>
+            <div class="hero__stat"><b>0</b><span>追踪脚本</span></div>
+          </div>
+        </div>
+
+        <div class="hero__stage" aria-hidden="true">
+          <figure class="polaroid polaroid--a">
+            <img src="assets/img/works/sakura.webp" alt="" width="768" height="1024" loading="eager" decoding="async">
+            <figcaption>樱井小春 · 樱花树下的巫女</figcaption>
+          </figure>
+          <figure class="polaroid polaroid--b">
+            <img src="assets/img/works/mio.webp" alt="" width="768" height="1024" loading="eager" decoding="async">
+            <figcaption>星野澪 · 星辰占星师</figcaption>
+          </figure>
+          <figure class="polaroid polaroid--c">
+            <img src="assets/img/works/umi.webp" alt="" width="768" height="1024" loading="eager" decoding="async">
+            <figcaption>小海 · 夏日海边少女</figcaption>
+          </figure>
+          <div class="hero__sticker">今日<br>も 推し</div>
+          <span class="hero__spark hero__spark--1" aria-hidden="true">✦</span>
+          <span class="hero__spark hero__spark--2" aria-hidden="true">✿</span>
+          <span class="hero__spark hero__spark--3" aria-hidden="true">✦</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker__track">
+        <span>✿ 小小身影，大大世界</span><span>✦ 全年龄向 · SFW</span><span>✿ 插画由 Anima 生成</span><span>✦ 没有广告，没有追踪</span><span>✿ 用爱发电</span>
+        <span>✿ 小小身影，大大世界</span><span>✦ 全年龄向 · SFW</span><span>✿ 插画由 Anima 生成</span><span>✦ 没有广告，没有追踪</span><span>✿ 用爱发电</span>
+      </div>
+    </div>
+
+    <section class="section" id="gallery">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <div>
+            <p class="kicker">The Atlas · 小小居民们</p>
+            <h2>翻开这本图鉴</h2>
+            <p class="section__desc">12 张插画，12 段小故事。点击卡片看她的档案，点右上角的爱心把她收进口袋——只存在你的浏览器里。</p>
+          </div>
+        </div>
+
+        <div class="toolbar reveal" role="search">
+          <label class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            <input id="search" type="search" placeholder="搜索名字、地点或标签…" autocomplete="off" aria-label="搜索角色">
+          </label>
+          <div class="chips" id="chips" aria-label="按标签筛选"></div>
+          <div class="toolbar__right">
+            <span class="count" id="count" role="status" aria-live="polite">共 12 位</span>
+            <select class="select" id="sort" aria-label="排序方式">
+              <option value="default">默认顺序</option>
+              <option value="random">随机排序</option>
+              <option value="name">按名字</option>
+            </select>
+            <button class="chip fav-toggle" id="fav-toggle" type="button" aria-pressed="false">♡ 只看收藏</button>
+          </div>
+        </div>
+
+        <div class="grid" id="grid"></div>
+        <noscript><p class="empty"><b>需要 JavaScript</b>图鉴由浏览器渲染，请开启 JavaScript 后再来玩。</p></noscript>
+      </div>
+    </section>
+
+    <section class="section" id="about">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <div>
+            <p class="kicker">About · 关于</p>
+            <h2>关于这本小图鉴</h2>
+            <p class="section__desc">它很小，小到只有一个页面；它也很认真，认真到每一张图都写了档案。</p>
+          </div>
+        </div>
+
+        <div class="about-grid reveal">
+          <div class="about-card">
+            <div class="ico" aria-hidden="true">🌷</div>
+            <h3>全年龄，非性化</h3>
+            <p>这里只收录可爱、治愈、元气向的作品。没有性化呈现，没有令人不适的构图，适合在任何场合打开。</p>
+          </div>
+          <div class="about-card">
+            <div class="ico" aria-hidden="true">🪶</div>
+            <h3>纯静态，零追踪</h3>
+            <p>没有后端、没有广告、没有统计脚本。所有内容都在你的浏览器里完成，收藏也只留在本地。</p>
+          </div>
+          <div class="about-card">
+            <div class="ico" aria-hidden="true">🎨</div>
+            <h3>AI 生成插画</h3>
+            <p>12 张插画由本机 ComfyUI 的 Anima 模型生成，角色均为虚构。每张图都标注了生成方式与种子。</p>
+          </div>
+        </div>
+
+        <p class="about-note reveal">
+          技术备注：HTML + CSS + Vanilla JS，零构建、零依赖；字体使用系统字体栈，图片为本地 WebP。
+          如果你也想搭一个，源码在 <a href="https://github.com/greenhandzdl/lol1-pages" target="_blank" rel="noopener">GitHub</a>，代码以 MIT 协议开放。
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="policy">
+      <div class="wrap">
+        <div class="policy reveal">
+          <h3>内容政策 · Content Policy</h3>
+          <ul>
+            <li>本站为全年龄（SFW）站点，仅展示非性化的可爱向作品，角色均为虚构人物。</li>
+            <li>所有插画由 AI 生成，不涉及真实人物；生成模型与方式已在每张作品的档案中注明。</li>
+            <li>如果你认为某张图片或某段文字不妥，请通过 <a href="https://github.com/greenhandzdl/lol1-pages/issues" target="_blank" rel="noopener">GitHub Issues</a> 告诉我，核实后会立即处理。</li>
+            <li>本站不使用 Cookie、不加载第三方脚本、不收集任何访问数据。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <p>© 2026 lol1.moe · 用爱发电</p>
+      <p class="footer__note">插画：Anima AI · 代码 MIT · 无广告 · 无追踪</p>
+      <p>
+        <a href="https://github.com/greenhandzdl/lol1-pages" target="_blank" rel="noopener">源码</a>
+        ·
+        <a href="#policy">内容政策</a>
+      </p>
+    </div>
+  </footer>
+
+  <dialog class="detail" id="detail" aria-labelledby="detail-name">
+    <div class="detail__panel">
+      <button class="detail__close" id="detail-close" type="button" aria-label="关闭详情">✕</button>
+      <div class="detail__media">
+        <img id="detail-img" alt="" width="768" height="1024">
+      </div>
+      <div class="detail__info">
+        <p class="detail__eyebrow" id="detail-eyebrow"></p>
+        <h2 id="detail-name"></h2>
+        <p class="detail__en" id="detail-en"></p>
+        <p class="detail__tagline" id="detail-tagline"></p>
+        <p class="detail__bio" id="detail-bio"></p>
+        <dl class="detail__meta">
+          <div><dt>居住地</dt><dd id="detail-region"></dd></div>
+          <div><dt>属性</dt><dd id="detail-element"></dd></div>
+          <div><dt>画师</dt><dd id="detail-artist"></dd></div>
+          <div><dt>授权</dt><dd id="detail-license"></dd></div>
+        </dl>
+        <div class="detail__tags" id="detail-tags"></div>
+        <div class="detail__actions">
+          <button class="btn btn--ghost btn--small" id="detail-like" type="button" aria-pressed="false">♡ 收进口袋</button>
+          <div class="pager">
+            <button id="detail-prev" type="button" aria-label="上一位">←</button>
+            <span id="detail-index"></span>
+            <button id="detail-next" type="button" aria-label="下一位">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/main.js" type="module"></script>
+</body>
+</html>

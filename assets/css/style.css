@@ -411,9 +411,9 @@ button, input, select { font: inherit; color: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.polaroid--a { top: 36px; left: 0; transform: rotate(-5deg); z-index: 1; animation-delay: -1.2s; }
+.polaroid--a { top: 36px; left: 0; transform: rotate(-5deg); z-index: 3; animation-delay: -1.2s; }
 .polaroid--b { top: 0; right: 0; width: 41%; transform: rotate(5.5deg); z-index: 2; animation-delay: -3.6s; }
-.polaroid--c { bottom: 0; left: 33%; width: 39%; transform: rotate(-2deg); z-index: 3; animation-delay: -5.4s; }
+.polaroid--c { bottom: 0; left: 33%; width: 39%; transform: rotate(-2deg); z-index: 1; animation-delay: -5.4s; }
 
 .hero__sticker {
   position: absolute;

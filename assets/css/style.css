@@ -930,6 +930,7 @@ button, input, select { font: inherit; color: inherit; }
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+  min-width: 0;
   min-height: 0;
   padding: clamp(1.4rem, 3vw, 2.5rem);
   overflow-y: auto;
@@ -1098,9 +1099,9 @@ body.is-locked { overflow: hidden; }
 @media (max-width: 860px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
   .about-grid { grid-template-columns: 1fr; }
-  .detail__panel { grid-template-columns: 1fr; }
-  .detail__media { aspect-ratio: 4 / 3; }
-  .detail__media img { max-height: 42dvh; }
+  .detail__panel { grid-template-columns: minmax(0, 1fr); }
+  .detail__media { min-width: 0; aspect-ratio: 4 / 3; }
+  .detail__media img { max-height: 42dvh; object-position: center top; }
   .nav__links { display: none; }
 }
 
@@ -1125,7 +1126,7 @@ body.is-locked { overflow: hidden; }
   .card__title { font-size: 0.74rem; }
   .detail { width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; }
   .detail__panel { max-height: 100dvh; height: 100%; border-radius: 0; }
-  .detail__media img { max-height: 38dvh; }
+  .detail__media img { max-height: 38dvh; object-position: center top; }
   .detail__meta { grid-template-columns: 1fr; }
   .footer__inner { flex-direction: column; align-items: flex-start; }
 }

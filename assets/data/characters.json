@@ -269,7 +269,9 @@
       ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1011
+      "seed": 1011,
+      "model": "assets/models/cream.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "hibari",
@@ -292,7 +294,9 @@
       ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1012
+      "seed": 1012,
+      "model": "assets/models/hibari.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     }
   ]
 }

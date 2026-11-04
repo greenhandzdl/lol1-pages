@@ -21,8 +21,11 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createIO, trimBackdrop } from './trim-backdrop.mjs';
 
 const run = promisify(execFile);
+/** gltf-transform 的读写器：必须注册 meshopt 扩展，否则读不了压缩过的 GLB */
+const gltfIO = createIO();
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const COMFY = process.env.COMFY_URL || 'http://127.0.0.1:8188';
 const COMFY_INPUT = process.env.COMFY_INPUT || '/opt/comfyui/input';
@@ -32,6 +35,7 @@ const args = process.argv.slice(2);
 const all = args.includes('--all');
 const noCompress = args.includes('--no-compress');
 const reprocess = args.includes('--reprocess');
+const label = args.find((a) => a.startsWith('--label='))?.split('=')[1] || null;
 /** 顶点预算：单模型约 250–300 KB，12 个合计约 3 MB */
 const TARGET_VERTS = 36000;
 const only = args.filter((a) => !a.startsWith('--'));
@@ -80,6 +84,11 @@ async function submit(prompt) {
 }
 
 /** 1+3. 抠图成白底单图（Hunyuan3D 投影贴图的前提） */
+const PAD = Number(process.env.HUNY_PAD ?? 1.05);
+const GROW = Number(process.env.HUNY_GROW ?? 0);
+const THRESH = Number(process.env.HUNY_THRESH ?? 0.6);
+const OCTREE = Number(process.env.HUNY_OCTREE ?? 256);
+
 async function isolate(id, srcFile) {
   const outputs = await submit({
     1: { class_type: 'LoadImage', inputs: { image: srcFile } },
@@ -89,20 +98,26 @@ async function isolate(id, srcFile) {
       class_type: 'ImageCropToMask',
       inputs: {
         images: ['1', 0], masks: ['3', 0], width: 1024, height: 1024,
-        pad_factor: 1.05, grow_mask: 0, background: '#FFFFFF',
+        pad_factor: PAD, grow_mask: GROW, background: '#FFFFFF',
       },
     },
     5: { class_type: 'SaveImage', inputs: { images: ['4', 0], filename_prefix: `iso_${id}` } },
   });
   const [file] = outputs['5'].images;
   const abs = path.join(COMFY_OUTPUT, file.subfolder, file.filename);
+
+  // 抠图会把悬空道具（风铃、吊灯、气球）一起留下来，Hunyuan3D 于是把它们也
+  // 生成成立体物件，包围盒被撑高、人物缩在角落。所以再裁一次，只留人物。
   const staged = `iso_${id}.png`;
-  await writeFile(path.join(COMFY_INPUT, staged), await readFile(abs));
-  return staged;
+  const subject = path.join(COMFY_INPUT, `sub_${id}.png`);
+  await run(process.execPath, [path.join(ROOT, 'scripts/3d/isolate-subject.mjs'), abs, subject], {
+    cwd: ROOT,
+  });
+  return `sub_${id}.png`;
 }
 
 /** 4. Hunyuan3D 生成带色模型 */
-async function generate(id, img, seed = 42) {
+async function generate(id, img, seed = 42, name = null) {
   const outputs = await submit({
     1: { class_type: 'LoadImage', inputs: { image: img } },
     2: { class_type: 'ImageOnlyCheckpointLoader', inputs: { ckpt_name: 'hunyuan_3d_v2.1.safetensors' } },
@@ -117,12 +132,12 @@ async function generate(id, img, seed = 42) {
         seed, steps: 30, cfg: 5.0, sampler_name: 'euler', scheduler: 'normal', denoise: 1.0,
       },
     },
-    8: { class_type: 'VAEDecodeHunyuan3D', inputs: { samples: ['7', 0], vae: ['2', 2], num_chunks: 5000, octree_resolution: 256 } },
-    9: { class_type: 'VoxelToMesh', inputs: { voxel: ['8', 0], algorithm: 'surface net', threshold: 0.6 } },
+    8: { class_type: 'VAEDecodeHunyuan3D', inputs: { samples: ['7', 0], vae: ['2', 2], num_chunks: 5000, octree_resolution: OCTREE } },
+    9: { class_type: 'VoxelToMesh', inputs: { voxel: ['8', 0], algorithm: 'surface net', threshold: THRESH } },
     10: { class_type: 'UnwrapMesh', inputs: { mesh: ['9', 0], segmenter: 'pec', resolution: 1024, padding: 1, weld_distance: 0.0 } },
     11: { class_type: 'ApplyTextureToMesh', inputs: { mesh: ['10', 0], base_color: ['1', 0] } },
     12: { class_type: 'MeshToFile3D', inputs: { mesh: ['11', 0] } },
-    13: { class_type: 'Save3DAdvanced', inputs: { model_3d: ['12', 0], filename_prefix: `3d/huny_${id}`, viewport_state: {}, width: 1024, height: 1024 } },
+    13: { class_type: 'Save3DAdvanced', inputs: { model_3d: ['12', 0], filename_prefix: `3d/huny_${name || id}`, viewport_state: {}, width: 1024, height: 1024 } },
   });
   const [file] = outputs['13']['3d'];
   return path.join(COMFY_OUTPUT, file.subfolder, file.filename);
@@ -170,6 +185,20 @@ async function postprocess(input, target, { compress = true } = {}) {
   console.log('  · 焊接顶点…');
   await gltf(['weld', input, welded]);
 
+  // 插画里人物身后常有装饰背板（拱门、橱窗、彩带框），Hunyuan3D 会把它也挤成
+  // 一层薄壳挂在背后，转起来完全不像手办。按 Z 分层找「贴边且面积极大」的层切掉。
+  console.log('  · 检查背景板…');
+  const backdropDoc = await gltfIO.read(welded);
+  const backdropReport = trimBackdrop(backdropDoc);
+  if (backdropReport.droppedLayers) {
+    await gltfIO.write(welded, backdropDoc);
+    console.log(
+      `    切掉 ${backdropReport.droppedLayers} 层背景板（三角面 ${backdropReport.triBefore} → ${backdropReport.triAfter}）`
+    );
+  } else {
+    console.log('    未发现背景板');
+  }
+
   console.log('  · 剥离贴图…');
   await run(process.execPath, [path.join(ROOT, 'scripts/3d/strip-texture.mjs'), welded, stripped], {
     cwd: ROOT,
@@ -216,20 +245,24 @@ async function prepareOne(charId) {
 
   console.log(`\n▶ ${ch.name} (${charId})`);
   const src = path.basename(ch.image);
-  await writeFile(path.join(COMFY_INPUT, `src_${charId}.png`), await readFile(path.join(ROOT, ch.image)));
+  // webp → png 之后塞进 ComfyUI 输入目录（ComfyUI 只读自己的 input/）
+  await run('magick', [path.join(ROOT, ch.image), path.join(COMFY_INPUT, `src_${charId}.png`)], {
+    cwd: ROOT,
+  });
 
   // 先把源图复制进 ComfyUI 输入目录（ComfyUI 只能读自己的 input/）
   console.log('  · 抠图…');
   const iso = await isolate(charId, `src_${charId}.png`);
 
-  console.log('  · Hunyuan3D 生成…');
-  const generated = await generate(charId, iso);
+  const seed = Number(process.env.HUNY_SEED ?? ch.seed ?? 42);
+  console.log(`  · Hunyuan3D 生成… (seed ${seed})`);
+  const generated = await generate(charId, iso, seed, label ? `${charId}_${label}` : null);
 
   // 原始几何存进缓存：后处理（weld/简化）可重复执行而不会累积损失。
   // 直接对成品再简化一次，比例会叠乘，画质一路掉下去 —— 所以要留源。
   const cacheDir = path.join(ROOT, '.cache/3d-raw');
   await mkdir(cacheDir, { recursive: true });
-  const raw = path.join(cacheDir, `${charId}.glb`);
+  const raw = path.join(cacheDir, label ? `${label}.glb` : `${charId}.glb`);
   await writeFile(raw, await readFile(generated));
 
   const tmpDir = path.join(ROOT, '.tmp-3d');

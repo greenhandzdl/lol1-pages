@@ -1,0 +1,19 @@
+{
+  "name": "lol1-pages",
+  "version": "1.0.0",
+  "private": true,
+  "description": "lol1.moe · 萝莉图鉴 —— 纯静态站点（3D 模型流水线为离线开发依赖）",
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8788",
+    "model": "node scripts/3d/prepare-model.mjs",
+    "model:strip": "node scripts/3d/strip-texture.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "4.5.1",
+    "@gltf-transform/core": "4.5.1"
+  },
+  "dependencies": {
+    "meshoptimizer": "^0.22.0"
+  }
+}

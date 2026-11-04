@@ -1,4 +1,5 @@
-preview/
+# 离线模型流水线的中间产物（原始几何很占空间，不入仓）
+.cache/
+.tmp-3d/
 node_modules/
-.DS_Store
 *.log

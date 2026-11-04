@@ -9,12 +9,21 @@
       "bio": "神社里最小的一位巫女，负责把春天分装成小份。她相信每一片落下的花瓣，都是一封还没写完的信。",
       "region": "樱见町",
       "element": "花",
-      "tags": ["樱花", "巫女", "粉色"],
+      "tags": [
+        "樱花",
+        "巫女",
+        "粉色"
+      ],
       "image": "assets/img/works/sakura.webp",
-      "palette": ["#ffd9e6", "#ffb7d5"],
+      "palette": [
+        "#ffd9e6",
+        "#ffb7d5"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1001
+      "seed": 1001,
+      "model": "assets/models/sakura.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "mio",
@@ -25,12 +34,21 @@
       "bio": "天文台最年轻的占星师，随身带着一颗会打呼噜的水晶球。她说星星的排列，其实是一首没唱完的歌。",
       "region": "星落台",
       "element": "星",
-      "tags": ["星空", "紫色", "魔法"],
+      "tags": [
+        "星空",
+        "紫色",
+        "魔法"
+      ],
       "image": "assets/img/works/mio.webp",
-      "palette": ["#e5d9ff", "#b79cff"],
+      "palette": [
+        "#e5d9ff",
+        "#b79cff"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1002
+      "seed": 1002,
+      "model": "assets/models/mio.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "mint",
@@ -41,12 +59,21 @@
       "bio": "住在薄荷森最深处的精灵，头发是春天第一茬新叶的颜色。她收集露珠，也收集迷路的人。",
       "region": "薄荷森",
       "element": "森",
-      "tags": ["薄荷", "森系", "治愈"],
+      "tags": [
+        "薄荷",
+        "森系",
+        "治愈"
+      ],
       "image": "assets/img/works/mint.webp",
-      "palette": ["#d6f7ec", "#9fe3cf"],
+      "palette": [
+        "#d6f7ec",
+        "#9fe3cf"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1003
+      "seed": 1003,
+      "model": "assets/models/mint.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "chacha",
@@ -57,9 +84,16 @@
       "bio": "红茶馆的第三代主人，坚持用三块方糖和三个故事招待客人。她的裙摆里，永远藏着最后一块曲奇。",
       "region": "红茶馆",
       "element": "茶",
-      "tags": ["红茶", "洋装", "优雅"],
+      "tags": [
+        "红茶",
+        "洋装",
+        "优雅"
+      ],
       "image": "assets/img/works/chacha.webp",
-      "palette": ["#ffe7d1", "#e9b78f"],
+      "palette": [
+        "#ffe7d1",
+        "#e9b78f"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
       "seed": 1004
@@ -73,9 +107,16 @@
       "bio": "魔法学院的问题学生，咒语总差半个音节。好在她的猫会替她把闯的祸，一爪一爪埋进花盆里。",
       "region": "铃兰巷",
       "element": "猫",
-      "tags": ["猫耳", "魔法", "俏皮"],
+      "tags": [
+        "猫耳",
+        "魔法",
+        "俏皮"
+      ],
       "image": "assets/img/works/suzuka.webp",
-      "palette": ["#ffe1c2", "#ffb36b"],
+      "palette": [
+        "#ffe1c2",
+        "#ffb36b"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
       "seed": 1005
@@ -89,12 +130,22 @@
       "bio": "潮见滨的夏天管理员，负责把海浪声调到刚刚好。她的草帽里装过贝壳、汽水，还有一整个八月的风。",
       "region": "潮见滨",
       "element": "海",
-      "tags": ["海", "夏日", "元气"],
+      "tags": [
+        "海",
+        "夏日",
+        "元气"
+      ],
       "image": "assets/img/works/umi.webp",
-      "palette": ["#d9f1ff", "#8fd0f5"],
+      "palette": [
+        "#d9f1ff",
+        "#8fd0f5"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1006
+      "seed": 1006,
+      "model": "assets/models/umi.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何",
+      "modelYaw": 90
     },
     {
       "id": "shiori",
@@ -105,12 +156,21 @@
       "bio": "旧书塔的夜班管理员，会给每一本无人借阅的书读睡前故事。她的眼镜片上，常常映着别人的冒险。",
       "region": "旧书塔",
       "element": "书",
-      "tags": ["书", "安静", "眼镜"],
+      "tags": [
+        "书",
+        "安静",
+        "眼镜"
+      ],
       "image": "assets/img/works/shiori.webp",
-      "palette": ["#e8e1d6", "#b8a894"],
+      "palette": [
+        "#e8e1d6",
+        "#b8a894"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1007
+      "seed": 1007,
+      "model": "assets/models/shiori.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "yukino",
@@ -121,12 +181,21 @@
       "bio": "白夜原的扫雪妖精，走路没有声音。她会在你窗台上留一枚雪花，作为“今天也辛苦了”的收据。",
       "region": "白夜原",
       "element": "雪",
-      "tags": ["雪", "白色", "温柔"],
+      "tags": [
+        "雪",
+        "白色",
+        "温柔"
+      ],
       "image": "assets/img/works/yukino.webp",
-      "palette": ["#eef6ff", "#c3ddf7"],
+      "palette": [
+        "#eef6ff",
+        "#c3ddf7"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1008
+      "seed": 1008,
+      "model": "assets/models/yukino.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "yayoi",
@@ -137,12 +206,21 @@
       "bio": "南瓜镇的糖果管理员，翅膀小得飞不过屋顶。她的原则是：不给糖就捣蛋，给了糖就多捣一个。",
       "region": "南瓜镇",
       "element": "夜",
-      "tags": ["万圣", "恶魔", "橙色"],
+      "tags": [
+        "万圣",
+        "恶魔",
+        "橙色"
+      ],
       "image": "assets/img/works/yayoi.webp",
-      "palette": ["#ffe0c7", "#ff9f5a"],
+      "palette": [
+        "#ffe0c7",
+        "#ff9f5a"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1009
+      "seed": 1009,
+      "model": "assets/models/yayoi.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "kanon",
@@ -153,12 +231,22 @@
       "bio": "花咲野的花精灵，能听见花开的声音。她走路时裙摆会掉出花瓣，所以迷路的人总能找到回家的方向。",
       "region": "花咲野",
       "element": "春",
-      "tags": ["花", "春天", "清香"],
+      "tags": [
+        "花",
+        "春天",
+        "清香"
+      ],
       "image": "assets/img/works/kanon.webp",
-      "palette": ["#ffe6ef", "#f5a9c4"],
+      "palette": [
+        "#ffe6ef",
+        "#f5a9c4"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1010
+      "seed": 1010,
+      "model": "assets/models/kanon.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何",
+      "modelYaw": 270
     },
     {
       "id": "cream",
@@ -169,9 +257,16 @@
       "bio": "奶油街甜品店的看板娘，能把失败的马卡龙做成云朵。她相信所有坏心情，都能被一勺奶油治好。",
       "region": "奶油街",
       "element": "甜",
-      "tags": ["甜品", "奶油", "甜蜜"],
+      "tags": [
+        "甜品",
+        "奶油",
+        "甜蜜"
+      ],
       "image": "assets/img/works/cream.webp",
-      "palette": ["#fff0e2", "#ffc9a3"],
+      "palette": [
+        "#fff0e2",
+        "#ffc9a3"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
       "seed": 1011
@@ -185,9 +280,16 @@
       "bio": "风见台天台的风铃管理员，负责在起风时把云赶成羊群。她说天台风最大的时候，心事最轻。",
       "region": "风见台",
       "element": "风",
-      "tags": ["天空", "风", "清爽"],
+      "tags": [
+        "天空",
+        "风",
+        "清爽"
+      ],
       "image": "assets/img/works/hibari.webp",
-      "palette": ["#e3f2ff", "#a7d8ff"],
+      "palette": [
+        "#e3f2ff",
+        "#a7d8ff"
+      ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
       "seed": 1012

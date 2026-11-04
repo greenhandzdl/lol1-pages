@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>3D 手办台 · 萝莉图鉴 | lol1.moe</title>
+  <meta name="description" content="把 12 位小小居民捧在手里转一转：拖拽旋转、双指缩放，还有一局「寻星」小游戏。">
+  <meta name="theme-color" content="#fff8f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1420" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://lol1.moe/3d/">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/stage.css">
+  <script>
+    // 首帧前应用主题，避免闪白（与首页同款）
+    try {
+      const s = localStorage.getItem('lol1:theme');
+      const d = matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');
+    } catch (_) {}
+  </script>
+</head>
+<body class="page-stage">
+  <a class="skip" href="#stage-main">跳到 3D 舞台</a>
+
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="../index.html">
+      <span class="nav__logo" aria-hidden="true">lol1</span>
+      <span class="nav__title">萝莉图鉴</span>
+    </a>
+    <nav class="nav__links" aria-label="主导航">
+      <a href="../index.html#characters">图鉴</a>
+      <a href="../index.html#regions">地域</a>
+      <a href="./" aria-current="page">3D 手办台</a>
+    </nav>
+    <div class="nav__actions">
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="切换深浅色">
+        <span aria-hidden="true">◐</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="stage-main" class="stage" data-state="loading">
+    <div class="stage__viewport" id="viewport" aria-label="3D 角色展示区">
+      <noscript>
+        <img class="stage__fallback" alt="樱井小春" width="768" height="1024">
+      </noscript>
+      <p class="stage__hint" aria-hidden="true">拖动旋转 · 双指缩放</p>
+      <div class="stage__loading" id="loading" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>正在把小居民请上台…</span>
+      </div>
+      <div class="stage__error" id="stage-error" hidden>
+        <p>这台设备暂时放不了 3D，已切换为图片模式。</p>
+        <img class="stage__fallback" id="fallback-img" alt="" width="768" height="1024">
+      </div>
+    </div>
+
+    <aside class="stage__panel" aria-labelledby="stage-name">
+      <p class="stage__eyebrow" id="stage-region">—</p>
+      <h1 class="stage__name" id="stage-name">—</h1>
+      <p class="stage__title" id="stage-title"></p>
+      <p class="stage__tagline" id="stage-tagline"></p>
+      <dl class="stage__meta">
+        <div><dt>元素</dt><dd id="stage-element">—</dd></div>
+        <div><dt>地域</dt><dd id="stage-region2">—</dd></div>
+        <div><dt>标签</dt><dd id="stage-tags">—</dd></div>
+      </dl>
+      <p class="stage__credit" id="stage-credit"></p>
+
+      <div class="stage__actions">
+        <button class="btn btn--ghost" id="prev-btn" type="button" aria-label="上一个角色">← 上一个</button>
+        <button class="btn btn--primary" id="game-btn" type="button">开始寻星</button>
+        <button class="btn btn--ghost" id="next-btn" type="button" aria-label="下一个角色">下一个 →</button>
+      </div>
+      <p class="stage__keys" aria-hidden="true">← → 切换 · 拖拽旋转 · 滚轮缩放</p>
+    </aside>
+
+    <section class="game" id="game" hidden aria-labelledby="game-title">
+      <h2 class="game__title" id="game-title">寻星</h2>
+      <p class="game__rule">45 秒内找到藏在角色身上的 3 颗星。转到背面找找看。</p>
+      <p class="game__hud">
+        <span>已找到 <b id="found-count">0</b>/3</span>
+        <span>剩余 <b id="game-time">45</b>s</span>
+      </p>
+      <p class="game__msg" id="game-msg" role="status" aria-live="polite"></p>
+      <button class="btn btn--ghost" id="game-quit" type="button">退出</button>
+    </section>
+  </main>
+
+  <script type="module" src="../assets/js/stage/app.js"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 /* lol1.moe · 萝莉图鉴 — vanilla ES module */
+import { collapseNav } from './nav-collapse.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -88,7 +89,7 @@ function cardHTML(c, index) {
                sizes="(max-width: 860px) 46vw, 30vw"
                alt="插画：${c.name} · ${c.title}" width="768" height="1024" loading="lazy" decoding="async">
           <span class="card__badge">NO.${pad2(index + 1)}</span>
-          <span class="card__hint">翻开她的档案 →</span>
+          <span class="card__hint" aria-hidden="true">翻开她的档案 →</span>
         </span>
         <span class="card__info">
           <span class="card__name">${c.name}<small>${c.nameEn}</small></span>
@@ -224,6 +225,10 @@ function openDetail(id, trigger) {
   $('#detail-tags').innerHTML = c.tags.map((t) => `<span class="tag">${t}</span>`).join('');
   const indexEl = $('#detail-index');
   indexEl.textContent = idx >= 0 ? `${idx + 1} / ${list.length}` : '';
+
+  // 弹窗里给出该角色的独立页入口，让 /c/<id>/ 不是孤儿页
+  const pageLink = $('#detail-page');
+  if (pageLink) pageLink.href = `c/${encodeURIComponent(c.id)}/`;
   state.listIds = list.map((x) => x.id);
   syncDetailLike();
 
@@ -409,63 +414,6 @@ function petals() {
 }
 
 /* ---------- init ---------- */
-
-/* ---------- 移动端吸顶栏收起 ----------
- * 手机上一行 logo + 一行导航把吸顶栏顶到 ~92px，占了将近 11% 的可视高度。
- * 往下滚（看内容）时把导航行收起来，只留 logo 和图标；往回滚（找人）时再放出来。
- * 用 CSS 变量驱动高度，动画交给 CSS，JS 只切状态，避免滚动时每帧改样式。
- */
-function collapseNav() {
-  const header = document.querySelector('.site-header');
-  if (!header) return;
-
-  let lastY = window.scrollY;
-  let ticking = false;
-  const THRESHOLD = 120;   // 太靠顶部就别收，避免刚滚动就跳
-
-  const update = () => {
-    const y = window.scrollY;
-    const dy = y - lastY;
-
-    // 太靠近顶部就一律展开，先判这个，别被「抖动过滤」挡掉
-    if (y <= THRESHOLD) {
-      header.classList.remove('is-collapsed');
-      lastY = y;
-      ticking = false;
-      return;
-    }
-
-    // 忽略一两个像素的抖动，但要更新 lastY，否则小步滚动会一直累积不到阈值
-    if (Math.abs(dy) < 6) { ticking = false; return; }
-
-    if (dy > 0) {
-      header.classList.add('is-collapsed');       // 向下 → 收
-    } else {
-      header.classList.remove('is-collapsed');    // 向上 → 放
-    }
-    lastY = y;
-    ticking = false;
-  };
-
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }, { passive: true });
-
-  // 收起后导航项全没了，只能靠「往上滚」找回 —— 不够明显。
-  // 点 logo 在收起状态下先展开并回到顶部，而不是直接跳转。
-  const logo = header.querySelector('.logo');
-  if (logo) {
-    logo.addEventListener('click', (e) => {
-      if (header.classList.contains('is-collapsed')) {
-        e.preventDefault();
-        header.classList.remove('is-collapsed');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    });
-  }
-}
 
 async function init() {
   collapseNav();

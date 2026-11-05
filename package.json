@@ -8,7 +8,8 @@
     "dev": "python3 -m http.server 8788",
     "model": "node scripts/3d/prepare-model.mjs",
     "model:strip": "node scripts/3d/strip-texture.mjs",
-    "img": "node scripts/img/build-srcset.mjs"
+    "img": "node scripts/img/build-srcset.mjs",
+    "pages": "node scripts/build-pages.mjs"
   },
   "devDependencies": {
     "@gltf-transform/cli": "4.5.1",

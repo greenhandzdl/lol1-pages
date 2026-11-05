@@ -1282,3 +1282,136 @@ body.is-locked { overflow: hidden; }
   .region { transition: none; }
   .region:hover { transform: none; }
 }
+
+/* ---------- 图鉴完成度（批次二）---------- */
+
+.hero__progress {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 14px 18px;
+  margin-top: clamp(20px, 3vw, 28px);
+  max-width: 660px;
+}
+
+/* 标签在上、数字在下：和上方 hero__stat 的"大数字 + 小说明"是同一套读法，
+   左右分列会让「3/12」看起来像属于下一个标签 */
+.prog__top {
+  display: grid;
+  gap: 1px;
+  margin-bottom: 7px;
+}
+.prog__top span {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+.prog__top b {
+  font-size: 1.02rem;
+  line-height: 1.15;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.prog__top b i {
+  font-style: normal;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.prog__bar {
+  height: 6px;
+  border-radius: 999px;
+  /* 轨道必须看得见，否则只剩粉色填充段，看着像条形错位 */
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+  overflow: hidden;
+}
+.prog__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffb7d5, #b79cff);
+  transition: width 0.5s var(--ease);
+}
+
+/* 未开始的一项淡一点，避免四个都是空条时显得像坏了 */
+.prog[data-key] .prog__bar span[style*='width:0%'] { opacity: 0; }
+
+/* ---------- 每日一抽（批次二）---------- */
+
+.section--tight { padding-top: clamp(20px, 3vw, 34px); }
+
+.daily {
+  display: grid;
+  gap: clamp(16px, 3vw, 32px);
+  grid-template-columns: 1fr;
+  /* 不铺满整行：否则标签贴左、角色贴右，中间空出一大片 */
+  max-width: 880px;
+  align-items: center;
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, #ffd9e6 60%, transparent), transparent 60%),
+    radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, #e5d9ff 60%, transparent), transparent 60%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+@media (min-width: 720px) {
+  /* 两列都按内容宽度、整体居中：如果让左列 flex 撑开，
+     标签和角色会被推到两端，中间空一大块 */
+  .daily {
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(24px, 5vw, 56px);
+  }
+}
+
+.daily__note { margin: 6px 0 0; font-size: 0.86rem; color: var(--ink-3); }
+
+.daily__body {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2.4vw, 22px);
+}
+
+.daily__face {
+  flex: 0 0 auto;
+  width: clamp(84px, 14vw, 120px);
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  transition: transform 0.25s var(--ease);
+}
+.daily__face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.daily__face:hover { transform: translateY(-3px) rotate(-1.5deg); }
+
+.daily__name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.daily__name span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.daily__line {
+  margin: 8px 0 10px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+  max-width: 32ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily__face { transition: none; }
+  .daily__face:hover { transform: none; }
+}

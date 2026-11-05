@@ -1,10 +1,11 @@
 /* lol1.moe · 萝莉图鉴 — vanilla ES module */
 import { collapseNav } from './nav-collapse.js';
+import { store, todayKey } from './store.js';
+import { pickOfDay, lineOfDay } from './daily.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-const STORE_FAVS = 'lol1:favs';
 const STORE_THEME = 'lol1:theme';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -22,21 +23,13 @@ const state = {
 
 /* ---------- storage ---------- */
 
+// 存档统一走 store.js：它负责旧键迁移与无痕模式降级
 function loadFavs() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORE_FAVS) || '[]');
-    state.favs = new Set(Array.isArray(raw) ? raw : []);
-  } catch {
-    state.favs = new Set();
-  }
+  state.favs = store.getFavs();
 }
 
 function saveFavs() {
-  try {
-    localStorage.setItem(STORE_FAVS, JSON.stringify([...state.favs]));
-  } catch {
-    /* private mode — keep the session state */
-  }
+  store.setFavs(state.favs);
 }
 
 /* ---------- data helpers ---------- */
@@ -154,6 +147,70 @@ function renderRegions() {
   });
 }
 
+
+/**
+ * 图鉴完成度 —— 把"看过的"变成"攒下的"。
+ *
+ * 四项各自独立，因为它们是四种不同的投入：
+ *   看过  点开过档案（最容易，进门就算）
+ *   收藏  主动存下来
+ *   转过  在 3D 台转过的（需要模型加载成功，成本比"看过"高）
+ *   寻星  玩过小游戏
+ * 不做成一条总和，是因为把它们相加没有意义 —— 只是想让人看到还有哪些没碰过。
+ */
+function renderProgress() {
+  const host = $('#progress');
+  if (!host) return;
+  const total = state.all.length || 1;
+  const seen = store.getSeen();
+  const stars = store.getStars();
+  const turned = store.getTurned();
+  const rows = [
+    { key: 'seen', label: '看过档案', n: state.all.filter((c) => seen.has(c.id)).length, total },
+    { key: 'fav', label: '收进口袋', n: state.favs.size, total },
+    { key: 'turn', label: '转过手办', n: turned.size, total },
+    { key: 'star', label: '寻星通关', n: Object.keys(stars).filter((k) => k !== '__all').length, total },
+  ];
+  host.innerHTML = rows
+    .map((r) => {
+      const pct = Math.round((Math.min(r.n, r.total) / r.total) * 100);
+      return `<div class="prog" data-key="${r.key}">
+        <div class="prog__top"><span>${r.label}</span><b>${Math.min(r.n, r.total)}<i>/${r.total}</i></b></div>
+        <div class="prog__bar" role="img" aria-label="${r.label} ${pct}%"><span style="width:${pct}%"></span></div>
+      </div>`;
+    })
+    .join('');
+}
+
+
+/**
+ * 每日一抽 —— 首页的"今天是她"。
+ * 用日期做确定性种子：同一天任何人进来看到的都是同一位，跨天才换。
+ * 抽到谁不落库（可以重复看），只把"今天抽过"记进存档，用于完成度统计。
+ */
+function renderDaily() {
+  const host = $('#daily-body');
+  if (!host) return;
+  const key = todayKey();
+  const c = pickOfDay(state.all, key);
+  if (!c) { host.innerHTML = ''; return; }
+  store.setSpin(key, c.id);
+
+  const stem = c.image.replace(/\.webp$/, '');
+  host.innerHTML = `
+    <a class="daily__face" href="/c/${c.id}/" aria-label="看 ${c.name} 的档案">
+      <img src="${c.image}"
+           srcset="${stem}-400.webp 400w, ${stem}-600.webp 600w, ${c.image} 768w"
+           sizes="120px" width="768" height="1024" loading="lazy" decoding="async"
+           alt="${c.name}">
+    </a>
+    <div class="daily__text">
+      <p class="daily__name">${c.name}<span>${c.title}</span></p>
+      <p class="daily__line">“${lineOfDay(key)}”</p>
+      <a class="btn btn--ghost btn--small" href="/c/${c.id}/">看看她 →</a>
+    </div>`;
+}
+
 function renderChips() {
   const tags = [];
   state.all.forEach((c) => c.tags.forEach((t) => { if (!tags.includes(t)) tags.push(t); }));
@@ -242,6 +299,8 @@ function openDetail(id, trigger) {
     idx = list.findIndex((x) => x.id === id);
   }
   state.currentId = id;
+  store.markSeen(id);
+  renderProgress();
   if (trigger) state.trigger = trigger;
 
   const dialog = $('#detail');
@@ -473,6 +532,8 @@ async function init() {
   $('#search').value = state.q;
   renderChips();
   renderRegions();
+  renderProgress();
+  renderDaily();
   updateFavToggle();
   $('#sort').value = state.sort;
   if (state.favOnly) $('#fav-toggle').setAttribute('aria-pressed', 'true');

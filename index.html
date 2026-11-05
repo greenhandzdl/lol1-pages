@@ -73,6 +73,7 @@
       <nav class="nav__links" aria-label="主导航">
         <a class="nav__link" href="#gallery">图鉴</a>
         <a class="nav__link" href="#regions">地域</a>
+        <a class="nav__link" href="shelf/">收藏册</a>
         <a class="nav__link" href="3d/">3D 手办台</a>
         <a class="nav__link" href="#about">关于</a>
         <a class="nav__link" href="#policy">内容政策</a>
@@ -109,6 +110,8 @@
             <div class="hero__stat"><b>100%</b><span>全年龄 · SFW</span></div>
             <div class="hero__stat"><b>0</b><span>追踪脚本</span></div>
           </div>
+
+          <div class="hero__progress" id="progress" aria-label="图鉴完成度"></div>
         </div>
 
         <div class="hero__stage" aria-hidden="true">
@@ -144,6 +147,18 @@
         <span>✿ 小小身影，大大世界</span><span>✦ 全年龄向 · SFW</span><span>✿ 插画由 Anima 生成</span><span>✦ 没有广告，没有追踪</span><span>✿ 用爱发电</span>
       </div>
     </div>
+
+    <section class="section section--tight" id="daily">
+      <div class="wrap">
+        <div class="daily reveal" id="daily-card">
+          <div class="daily__label">
+            <p class="kicker">Today · 今天是她</p>
+            <p class="daily__note">每天换一位。同一天进来，看到的都是同一个人。</p>
+          </div>
+          <div class="daily__body" id="daily-body"></div>
+        </div>
+      </div>
+    </section>
 
     <section class="section" id="gallery">
       <div class="wrap">

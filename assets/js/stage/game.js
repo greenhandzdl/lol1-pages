@@ -4,14 +4,14 @@
  * 设计意图：Hunyuan3D 的贴图在背面最难看，而寻星恰好强制玩家转到背面找线索
  * —— 把已知弱点变成玩法的理由。星星藏在角色身后的球面上，必须旋转才能看到。
  *
- * 规则：45 秒内找到 3 颗星；点中得分，点空扣 3 秒；最高分存 localStorage。
+ * 规则：45 秒内找到 3 颗星；点中得分，点空扣 3 秒；最高分按角色存进统一存档。
  */
 import { Sprite, SpriteMaterial, CanvasTexture, SRGBColorSpace, Vector3 } from './three.js';
+import { store } from '../store.js';
 
 const ROUND_SECONDS = 45;
 const STARS = 3;
 const PENALTY = 3;
-const STORE_BEST = 'lol1:starhunt';
 
 /** 做一张发光的星星贴图（按配色生成，无需外部图片） */
 function starTexture(hex, size = 128) {
@@ -63,10 +63,21 @@ export class StarHunt {
     this.msgEl = root.querySelector('#game-msg');
     root.querySelector('#game-quit').addEventListener('click', () => this.stop(true));
 
-    this.best = Number(localStorage.getItem(STORE_BEST) || 0) || 0;
+    // 最高分按角色记 —— 12 个模型复杂度不同，混在一起比没有意义
+    this.best = 0;
+    this._syncBest();
+  }
+
+  /** 切角色后重新取一遍纪录 */
+  _syncBest() {
+    const id = this.viewer?.currentId;
+    if (!id) { this.best = 0; return; }
+    const all = store.getStars();
+    this.best = all[id] || 0;
   }
 
   start() {
+    this._syncBest();
     if (!this.viewer?.stage || !this.viewer.current) {
       this.msgEl.textContent = '3D 还没准备好，稍等一下就开玩。';
       return;
@@ -172,7 +183,7 @@ export class StarHunt {
       const score = Math.max(0, this.timeLeft);
       if (score > this.best) {
         this.best = score;
-        try { localStorage.setItem(STORE_BEST, String(score)); } catch { /* ignore */ }
+        this.best = store.setStars(this.viewer?.currentId || '__all', score);
         this.msgEl.textContent = `通关！剩余 ${score}s，新纪录 ✦`;
       } else {
         this.msgEl.textContent = `通关！剩余 ${score}s（最高 ${this.best}s）`;

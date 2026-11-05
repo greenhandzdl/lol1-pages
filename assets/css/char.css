@@ -260,7 +260,7 @@ a.tag:hover {
   margin: 16px 0 0;
   padding: 12px 14px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--ink-1) 4%, transparent);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
   font-size: 0.9rem;
   line-height: 1.7;
   color: var(--ink-2);
@@ -270,7 +270,7 @@ a.tag:hover {
   margin-right: 8px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ink-1) 9%, transparent);
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -310,7 +310,7 @@ a.tag:hover {
 .rel:hover,
 .rel:focus-visible {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--ink-1) 18%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
   box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.35);
 }
 .rel__kind {
@@ -327,7 +327,7 @@ a.tag:hover {
 .rel__name {
   grid-area: name;
   font-weight: 700;
-  color: var(--ink-1);
+  color: var(--ink);
 }
 .rel__note {
   grid-area: note;

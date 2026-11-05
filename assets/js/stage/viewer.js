@@ -5,6 +5,7 @@
  * 任何一步失败都回落到 2D 图片，页面永不空白。
  */
 import { shouldSkip3D } from './capability.js';
+import { store } from '../store.js';
 
 const SITE_ROOT = new URL("../../../", import.meta.url);
 
@@ -141,6 +142,8 @@ export class Viewer {
         group = rig.group;
         this.hasModel.add(id);
         this.host.classList.add('has-model');
+        // 模型真的加载成功才算「转过」——立牌模式不算
+        store.markTurned(id);
       } catch (err) {
         console.warn(`[3d] 模型加载失败 ${id}：`, err);
         this.host.classList.remove('has-model');

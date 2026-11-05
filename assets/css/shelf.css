@@ -1,0 +1,199 @@
+/* shelf.css — 收藏册 */
+
+.shelf {
+  padding: clamp(24px, 4vw, 48px) 0 clamp(40px, 7vw, 72px);
+}
+
+.shelf__head {
+  margin-bottom: clamp(22px, 3.4vw, 34px);
+}
+.shelf__head h1 {
+  margin: 8px 0 0;
+  font-size: clamp(1.8rem, 4.6vw, 2.7rem);
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+.shelf__desc {
+  margin: 12px 0 0;
+  max-width: 52ch;
+  font-size: 0.94rem;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+/* ---------- 四格统计 ---------- */
+
+.shelf__stats {
+  display: grid;
+  gap: 14px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  margin-bottom: clamp(22px, 3vw, 30px);
+}
+
+.shelf__statLabel {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+.shelf__statNum {
+  margin: 2px 0 7px;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.shelf__statNum i {
+  font-style: normal;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.shelf__statBar {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+  overflow: hidden;
+}
+.shelf__statBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffb7d5, #b79cff);
+  transition: width 0.5s var(--ease);
+}
+
+/* ---------- 工具行 ---------- */
+
+.shelf__bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: clamp(16px, 2.4vw, 22px);
+}
+
+/* .chips 原本是网格里的元素，放进 flex 行后要显式允许收缩，
+   否则它按内容宽度撑开，右边被硬切掉而不是渐隐 */
+#shelf-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---------- 角色格 ---------- */
+
+.shelf__grid {
+  display: grid;
+  gap: clamp(12px, 2vw, 20px);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.sh {
+  display: grid;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.22s var(--ease);
+}
+.sh:hover { transform: translateY(-4px); }
+
+.sh__face {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-sm);
+}
+.sh__face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 未解锁：剪影。不是藏起来，是"还没碰过" */
+/* 真剪影：光去饱和还能认出是谁，"？？？"就自相矛盾了 */
+.sh.is-locked .sh__face img {
+  filter: grayscale(1) blur(7px) brightness(0.95) contrast(0.6);
+  opacity: 0.5;
+  transform: scale(1.12);
+}
+.sh.is-locked .sh__face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, var(--pa), var(--pb));
+  mix-blend-mode: soft-light;
+  opacity: 0.75;
+}
+.sh__q {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  color: color-mix(in srgb, var(--ink) 34%, transparent);
+  z-index: 1;
+}
+
+.sh__name {
+  margin-top: 6px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sh__title {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+.is-locked .sh__name,
+.is-locked .sh__title { color: var(--ink-3); }
+
+.sh__marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  min-height: 18px;
+}
+.mk {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.mk--seen { background: rgba(255, 255, 255, 0.7); color: #6b4f5c; }
+.mk--fav { background: #ffd7e5; color: #c74d76; }
+.mk--turn { background: #e5d9ff; color: #6a4fa8; }
+.mk--star { background: #fff0c9; color: #a17519; }
+
+[data-theme='dark'] .mk--seen { background: rgba(255, 255, 255, 0.1); color: var(--ink-2); }
+[data-theme='dark'] .mk--fav { background: rgba(255, 138, 181, 0.2); color: #ffa9c6; }
+[data-theme='dark'] .mk--turn { background: rgba(183, 156, 255, 0.2); color: #c4aaff; }
+[data-theme='dark'] .mk--star { background: rgba(255, 206, 115, 0.18); color: #ffd88a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sh { transition: none; }
+  .sh:hover { transform: none; }
+}
+
+/* ---------- 页脚 ---------- */
+
+.shelf__foot {
+  padding: 24px 0 40px;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+.shelf__foot a { color: var(--ink-2); }

@@ -67,6 +67,16 @@ function filtered() {
 
 /* ---------- rendering ---------- */
 
+/**
+ * 由原图路径推出 srcset。
+ * 原图是 768×1024，另有 -400 / -600 两档（scripts/img/build-srcset.mjs 生成）。
+ * 最大档直接用原图，所以没有 -768（实测那一档只小 2KB，不值得多 12 个文件）。
+ */
+function imgSrcset(image) {
+  const stem = image.replace(/\.webp$/, '');
+  return `${stem}-400.webp 400w, ${stem}-600.webp 600w, ${image} 768w`;
+}
+
 function cardHTML(c, index) {
   const liked = state.favs.has(c.id);
   const tags = c.tags.map((t) => `<span class="tag">${t}</span>`).join('');
@@ -74,7 +84,9 @@ function cardHTML(c, index) {
     <article class="card reveal" data-id="${c.id}">
       <button class="card__body" type="button" aria-haspopup="dialog" aria-label="查看 ${c.name} 的档案">
         <span class="card__media">
-          <img src="${c.image}" alt="插画：${c.name} · ${c.title}" width="768" height="1024" loading="lazy" decoding="async">
+          <img src="${c.image}" srcset="${imgSrcset(c.image)}"
+               sizes="(max-width: 860px) 46vw, 30vw"
+               alt="插画：${c.name} · ${c.title}" width="768" height="1024" loading="lazy" decoding="async">
           <span class="card__badge">NO.${pad2(index + 1)}</span>
           <span class="card__hint">翻开她的档案 →</span>
         </span>

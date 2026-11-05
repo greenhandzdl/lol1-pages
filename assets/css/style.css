@@ -1415,3 +1415,59 @@ body.is-locked { overflow: hidden; }
   .daily__face { transition: none; }
   .daily__face:hover { transform: none; }
 }
+
+/* ---------- 关系网（批次四）---------- */
+
+.web {
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 2vw, 20px) 0;
+}
+
+.web__svg {
+  width: 100%;
+  max-width: 620px;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+.web__edge {
+  stroke: color-mix(in srgb, var(--ink) 22%, transparent);
+  stroke-width: 0.22;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
+}
+/* 有一个人被聚焦时，其他线退到后面去 */
+.web.is-focus .web__edge { opacity: 0.18; }
+.web.is-focus .web__edge.is-hot {
+  opacity: 1;
+  stroke: var(--pink-2);
+  stroke-width: 0.5;
+}
+
+.web__node { cursor: pointer; }
+.web__node circle {
+  stroke: var(--surface);
+  stroke-width: 0.5;
+  transition: r 0.18s ease;
+}
+.web__node text {
+  font-size: 2.5px;
+  fill: var(--ink-2);
+  transition: fill 0.18s ease, font-weight 0.18s ease;
+}
+.web__node:hover circle,
+.web__node:focus-visible circle,
+.web__node.is-hot circle { r: 4.4; }
+.web__node:hover text,
+.web__node:focus-visible text,
+.web__node.is-hot text { fill: var(--ink); font-weight: 700; }
+
+.web__node:focus-visible { outline: none; }
+.web__node:focus-visible circle {
+  stroke: var(--pink-2);
+  stroke-width: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web__edge, .web__node circle, .web__node text { transition: none; }
+}

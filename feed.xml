@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>lol1.moe · 萝莉图鉴</title>
+    <link>https://lol1.moe/</link>
+    <description>12 位住在幻想里的小小居民。全年龄向，无追踪脚本。</description>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 05 Nov 2026 15:03:33 GMT</lastBuildDate>
+    <atom:link href="https://lol1.moe/feed.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>樱井小春 · 樱花树下的巫女</title>
+      <link>https://lol1.moe/c/sakura/</link>
+      <guid>https://lol1.moe/c/sakura/</guid>
+      <description>把春天的第一片花瓣，夹进你的御神签里。 住在樱见町，元素是花。</description>
+      <category>樱见町</category>
+    </item>
+    <item>
+      <title>星野澪 · 星辰占星师</title>
+      <link>https://lol1.moe/c/mio/</link>
+      <guid>https://lol1.moe/c/mio/</guid>
+      <description>今晚的星座，只为你一个人连线。 住在星落台，元素是星。</description>
+      <category>星落台</category>
+    </item>
+    <item>
+      <title>薄荷 · 森林小精灵</title>
+      <link>https://lol1.moe/c/mint/</link>
+      <guid>https://lol1.moe/c/mint/</guid>
+      <description>嘘——森林在午睡，脚步声轻一点。 住在薄荷森，元素是森。</description>
+      <category>薄荷森</category>
+    </item>
+    <item>
+      <title>茶茶 · 红茶会大小姐</title>
+      <link>https://lol1.moe/c/chacha/</link>
+      <guid>https://lol1.moe/c/chacha/</guid>
+      <description>三点钟的茶会，糖要放两块，故事要讲三遍。 住在红茶馆，元素是茶。</description>
+      <category>红茶馆</category>
+    </item>
+    <item>
+      <title>铃鹿 · 猫耳魔法使</title>
+      <link>https://lol1.moe/c/suzuka/</link>
+      <guid>https://lol1.moe/c/suzuka/</guid>
+      <description>魔法失误也没关系，尾巴会替我道歉。 住在铃兰巷，元素是猫。</description>
+      <category>铃兰巷</category>
+    </item>
+    <item>
+      <title>小海 · 夏日海边少女</title>
+      <link>https://lol1.moe/c/umi/</link>
+      <guid>https://lol1.moe/c/umi/</guid>
+      <description>把夏天装进贝壳，听见了吗？是海浪在笑。 住在潮见滨，元素是海。</description>
+      <category>潮见滨</category>
+    </item>
+    <item>
+      <title>书织 · 图书馆小书虫</title>
+      <link>https://lol1.moe/c/shiori/</link>
+      <guid>https://lol1.moe/c/shiori/</guid>
+      <description>这一页写的是龙，下一页……写的是你。 住在旧书塔，元素是书。</description>
+      <category>旧书塔</category>
+    </item>
+    <item>
+      <title>雪乃 · 雪国妖精</title>
+      <link>https://lol1.moe/c/yukino/</link>
+      <guid>https://lol1.moe/c/yukino/</guid>
+      <description>雪落得很慢，刚好够我想你一遍。 住在白夜原，元素是雪。</description>
+      <category>白夜原</category>
+    </item>
+    <item>
+      <title>夜宵 · 万圣节小恶魔</title>
+      <link>https://lol1.moe/c/yayoi/</link>
+      <guid>https://lol1.moe/c/yayoi/</guid>
+      <description>不给糖的话，我就把月亮涂成南瓜色。 住在南瓜镇，元素是夜。</description>
+      <category>南瓜镇</category>
+    </item>
+    <item>
+      <title>花音 · 花田花精灵</title>
+      <link>https://lol1.moe/c/kanon/</link>
+      <guid>https://lol1.moe/c/kanon/</guid>
+      <description>花开的时候，风会替我说喜欢你。 住在花咲野，元素是春。</description>
+      <category>花咲野</category>
+    </item>
+    <item>
+      <title>奶油 · 甜品店店员</title>
+      <link>https://lol1.moe/c/cream/</link>
+      <guid>https://lol1.moe/c/cream/</guid>
+      <description>今日推荐：草莓短蛋糕，和一点点心动。 住在奶油街，元素是甜。</description>
+      <category>奶油街</category>
+    </item>
+    <item>
+      <title>云雀 · 天台风铃少女</title>
+      <link>https://lol1.moe/c/hibari/</link>
+      <guid>https://lol1.moe/c/hibari/</guid>
+      <description>天台风很大，把烦恼都吹成云吧。 住在风见台，元素是风。</description>
+      <category>风见台</category>
+    </item>
+  </channel>
+</rss>

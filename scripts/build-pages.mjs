@@ -141,6 +141,7 @@ function page(c, prev, next, byId) {
   <meta name="theme-color" content="#fff8f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1c1420" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="lol1.moe · 萝莉图鉴" href="/feed.xml">
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="stylesheet" href="/assets/css/char.css">
 
@@ -277,6 +278,83 @@ async function main() {
   }
 
   console.log(`\n生成 ${characters.length} 个角色页。`);
+
+  await writeSitemap(characters);
+  await writeFeed(characters);
+}
+
+/* ---------- sitemap / RSS ---------- */
+
+/** 固定页面 + 12 个角色页 + 收藏册 + 小游戏 */
+function fixedPages() {
+  return [
+    { url: `${SITE}/`, priority: '1.0', changefreq: 'weekly' },
+    { url: `${SITE}/3d/`, priority: '0.8', changefreq: 'monthly' },
+    { url: `${SITE}/play/`, priority: '0.7', changefreq: 'monthly' },
+    { url: `${SITE}/shelf/`, priority: '0.5', changefreq: 'monthly' },
+  ];
+}
+
+async function writeSitemap(characters) {
+  const urls = [
+    ...fixedPages(),
+    ...characters.map((c) => ({
+      url: `${SITE}/c/${c.id}/`,
+      priority: '0.9',
+      changefreq: 'monthly',
+    })),
+  ];
+  const body = urls
+    .map(
+      (u) =>
+        `  <url><loc>${u.url}</loc><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`,
+    )
+    .join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}
+</urlset>
+`;
+  await writeFile(path.join(ROOT, 'sitemap.xml'), xml, 'utf8');
+  console.log(`sitemap.xml（${urls.length} 条）`);
+}
+
+/**
+ * RSS。站点没有发布日期字段，用 seed 当排序依据没有意义，
+ * 所以按图鉴顺序输出，pubDate 统一用构建时间之外的做法也不行——
+ * 这里干脆不写 pubDate，只写 lastBuildDate。读者关心的是"有这个东西"。
+ */
+async function writeFeed(characters) {
+  const items = characters
+    .map((c) => {
+      const url = `${SITE}/c/${c.id}/`;
+      const desc = `${c.tagline} 住在${c.region}，元素是${c.element}。`;
+      return `    <item>
+      <title>${esc(c.name)} · ${esc(c.title)}</title>
+      <link>${url}</link>
+      <guid>${url}</guid>
+      <description>${esc(desc)}</description>
+      <category>${esc(c.region)}</category>
+    </item>`;
+    })
+    .join('\n');
+
+  const now = new Date().toUTCString();
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>lol1.moe · 萝莉图鉴</title>
+    <link>${SITE}/</link>
+    <description>12 位住在幻想里的小小居民。全年龄向，无追踪脚本。</description>
+    <language>zh-CN</language>
+    <lastBuildDate>${now}</lastBuildDate>
+    <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml" />
+${items}
+  </channel>
+</rss>
+`;
+  await writeFile(path.join(ROOT, 'feed.xml'), xml, 'utf8');
+  console.log(`feed.xml（${characters.length} 条）`);
 }
 
 main().catch((err) => {

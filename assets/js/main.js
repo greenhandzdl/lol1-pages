@@ -211,6 +211,95 @@ function renderDaily() {
     </div>`;
 }
 
+
+/**
+ * 关系网全景。
+ *
+ * 38 条关系原本只在各自的角色页里出现，看不到整体形状。
+ * 这里用圆周布局：12 个人均匀排在一个圈上，谁和谁有关系就拉一条线。
+ *
+ * 用 SVG 而不是 canvas：12 个节点 + 38 条线，SVG 的点击与无障碍都更省事，
+ * 而且线宽和文字能跟着主题色走。
+ */
+function renderWeb() {
+  const host = $('#web-graph');
+  if (!host) return;
+
+  const R = 42;            // 半径（百分比），留出放标签的位置
+  const CX = 50, CY = 50;
+  const pos = new Map();
+  state.all.forEach((c, i) => {
+    const ang = (i / state.all.length) * Math.PI * 2 - Math.PI / 2;
+    pos.set(c.id, {
+      x: CX + Math.cos(ang) * R,
+      y: CY + Math.sin(ang) * R,
+      c,
+    });
+  });
+
+  // 每条边只画一次（A→B 和 B→A 是同一条）
+  const edges = [];
+  const seen = new Set();
+  state.all.forEach((c) => {
+    (c.relations || []).forEach((r) => {
+      const k = [c.id, r.id].sort().join('|');
+      if (seen.has(k) || !pos.has(r.id)) return;
+      seen.add(k);
+      edges.push({ a: c.id, b: r.id, kind: r.kind });
+    });
+  });
+
+  const lines = edges
+    .map((e) => {
+      const A = pos.get(e.a), B = pos.get(e.b);
+      return `<line class="web__edge" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"
+                data-a="${e.a}" data-b="${e.b}" />`;
+    })
+    .join('');
+
+  const nodes = [...pos.entries()]
+    .map(([id, p]) => {
+      const [c1, c2] = p.c.palette;
+      return `<a class="web__node" href="/c/${id}/" data-id="${id}">
+        <circle cx="${p.x}" cy="${p.y}" r="3.4" fill="${c2}" />
+        <text x="${p.x}" y="${p.y - 5.6}" text-anchor="middle">${p.c.name}</text>
+      </a>`;
+    })
+    .join('');
+
+  // 标题里的数字由数据算，不手写 —— 否则加一条关系就对不上了
+  const title = $('#web-title');
+  if (title) title.textContent = `${state.all.length} 个人，${edges.length} 条线`;
+
+  host.innerHTML = `
+    <svg class="web__svg" viewBox="0 0 100 100" role="img" aria-label="${state.all.length} 位角色之间的关系网，共 ${edges.length} 条关系">
+      <g class="web__edges">${lines}</g>
+      <g class="web__nodes">${nodes}</g>
+    </svg>`;
+
+  // 悬停（或聚焦）时高亮这个人的所有连线
+  const allLines = $$('.web__edge', host);
+  $$('.web__node', host).forEach((node) => {
+    const id = node.dataset.id;
+    const on = () => {
+      host.classList.add('is-focus');
+      allLines.forEach((l) => {
+        l.classList.toggle('is-hot', l.dataset.a === id || l.dataset.b === id);
+      });
+      node.classList.add('is-hot');
+    };
+    const off = () => {
+      host.classList.remove('is-focus');
+      allLines.forEach((l) => l.classList.remove('is-hot'));
+      node.classList.remove('is-hot');
+    };
+    node.addEventListener('mouseenter', on);
+    node.addEventListener('mouseleave', off);
+    node.addEventListener('focus', on);
+    node.addEventListener('blur', off);
+  });
+}
+
 function renderChips() {
   const tags = [];
   state.all.forEach((c) => c.tags.forEach((t) => { if (!tags.includes(t)) tags.push(t); }));
@@ -534,6 +623,7 @@ async function init() {
   renderRegions();
   renderProgress();
   renderDaily();
+  renderWeb();
   updateFavToggle();
   $('#sort').value = state.sort;
   if (state.favOnly) $('#fav-toggle').setAttribute('aria-pressed', 'true');

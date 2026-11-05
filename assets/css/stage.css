@@ -25,57 +25,14 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ---------- 顶栏（与首页视觉一致） ---------- */
-.page-stage .nav {
-  position: sticky;
-  top: 0;
+/* ---------- 顶栏 ----------
+ * 3D 页现在直接用首页的 .site-header + .wrap.nav 结构，
+ * 这里只覆盖一件事：它是 sticky 的（首页也是），别的都交给 style.css。
+ * 之前这里另写了一套 .page-stage .nav + .nav__brand/.nav__logo/.nav__actions，
+ * 结果是同一个站两套导航：高度不同、logo 不同、链接起始位置也不同。
+ */
+.page-stage .site-header {
   z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 14px clamp(16px, 4vw, 40px);
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--line);
-}
-.nav__brand {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--ink);
-}
-.nav__logo {
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--pink-2);
-}
-.nav__title {
-  font-size: 0.92rem;
-  color: var(--ink-2);
-}
-.nav__links {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.nav__links a {
-  padding: 7px 13px;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  color: var(--ink-2);
-  text-decoration: none;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease);
-}
-.nav__links a:hover,
-.nav__links a[aria-current='page'] {
-  background: var(--pink-soft);
-  color: var(--ink);
-}
-.nav__actions {
-  display: flex;
-  gap: 8px;
 }
 
 /* ---------- 主区 ---------- */
@@ -347,12 +304,18 @@
 }
 
 @media (max-width: 560px) {
+  /* 三项导航挤在右侧、左边空一大片；拉满整行平均分，点起来也更容易 */
   .nav__links {
     gap: 0;
+    margin-left: 0;
+    flex: 1 1 auto;
+    justify-content: space-around;
   }
   .nav__links a {
-    padding: 6px 10px;
-    font-size: 0.82rem;
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 6px 4px;
+    font-size: 0.8rem;
   }
   .nav__title {
     display: none;
@@ -364,6 +327,12 @@
   .stage__viewport {
     min-height: 52dvh;
     border-radius: var(--radius-sm);
+  }
+  /* 窄屏底部被提示条占了一行，模型再往上收一点 */
+  .stage__hint {
+    bottom: 8px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
   }
   .stage__name {
     font-size: 1.4rem;

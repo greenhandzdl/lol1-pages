@@ -244,6 +244,9 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 .nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* 触控区下限，见 stage.css 同名规则 */
   padding: 0.5rem 0.85rem;
   border-radius: 999px;
   color: var(--ink-2);
@@ -1102,12 +1105,65 @@ body.is-locked { overflow: hidden; }
   .detail__panel { grid-template-columns: minmax(0, 1fr); }
   .detail__media { min-width: 0; aspect-ratio: 4 / 3; }
   .detail__media img { max-height: 42dvh; object-position: center top; }
-  .nav__links { display: none; }
+  /* 之前这里直接 display:none —— 手机上首页没有任何导航入口，连「3D 手办台」
+     都进不去。窄屏挤不下四项，改成两行：第一行 logo + 图标，第二行整条导航。 */
+  .nav {
+    height: auto;
+    flex-wrap: wrap;
+    padding-block: 0.35rem 0.2rem;
+    row-gap: 0;
+  }
+  /* 导航变两行后总高约 100px，锚点跳转要跟着让位，否则标题被吸顶栏盖住 */
+  .section { scroll-margin-top: 112px; }
+  /* 两行导航本来就比桌面高，再半透明会让下面的卡片透上来糊成一片 */
+  .site-header {
+    background: var(--bg);
+    backdrop-filter: none;
+  }
+  .nav__links {
+    order: 3;
+    flex-basis: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 0;
+    margin-left: 0;
+  }
+  .nav__link {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0.45rem 0.2rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* 往下滚时收起导航行，只留 logo + 图标，吸顶栏从 92px 降到 52px。
+     用 max-height 而不是 display:none，才能过渡；opacity 一起降到 0
+     避免文字被压扁时露出来。 */
+  .nav__links {
+    overflow: hidden;
+    max-height: 44px;
+    opacity: 1;
+    transition: max-height 0.28s var(--ease), opacity 0.2s var(--ease),
+                margin 0.28s var(--ease);
+  }
+  .site-header.is-collapsed .nav__links {
+    max-height: 0;
+    opacity: 0;
+    margin-block: 0;
+    pointer-events: none;
+  }
+  /* 收起后导航行不占位，原本靠它的 margin-left:auto 把图标推到右边，
+     现在没了推力，logo 和图标会全部挤在左边 —— 这里补回来。
+     只在「已收起」时生效，展开时仍由 nav__links 撑开，避免双重推力。 */
+  .site-header.is-collapsed .nav .logo {
+    margin-right: auto;
+  }
 }
 
 @media (max-width: 560px) {
   .wrap { width: calc(100% - 28px); }
-  .nav { height: 64px; }
+  /* 注意：这里不能再写死 .nav 高度 —— 860 断点里导航改成了两行，
+     写死 64px 会让第二行溢出容器、压到下面的卡片上。 */
   .logo__badge { display: none; }
   .hero { padding-top: 2.2rem; }
   .hero h1 { font-size: clamp(2.3rem, 10.5vw, 3.1rem); }

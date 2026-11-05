@@ -19,7 +19,9 @@ const state = {
 
 /* ---------- 主题 ---------- */
 function initTheme() {
-  const btn = $('#theme-btn');
+  // 与首页同 id；旧标记里叫 #theme-btn，两个都认一下更稳
+  const btn = $('#theme-btn') || $('#theme-toggle');
+  if (!btn) return;
   const sync = () => {
     const dark = document.documentElement.dataset.theme === 'dark';
     btn.setAttribute('aria-pressed', String(dark));

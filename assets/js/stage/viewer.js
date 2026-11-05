@@ -8,6 +8,9 @@ import { shouldSkip3D } from './capability.js';
 
 const SITE_ROOT = new URL("../../../", import.meta.url);
 
+/** 手办归一化后的世界高度，与 rig.js 的 TARGET_HEIGHT 保持一致 */
+const MODEL_HEIGHT = 1.8;
+
 /** characters.json 里的路径都是相对站点根的（assets/...），在 /3d/ 下要显式解析 */
 export const siteURL = (p) => new URL(String(p).replace(/^\.?\//, ''), SITE_ROOT).href;
 
@@ -83,12 +86,29 @@ export class Viewer {
     }
   }
 
+  /**
+   * 按视锥几何算相机距离，让 1.8 高的手办正好铺满可用空间。
+   *
+   * 之前是写死 4.6（横屏）/ 5.4（竖屏）—— 竖屏反而拉远，手机上人物只占中间
+   * 一小块，四周全是空白。正确做法是分别算「装下高度」和「装下宽度」需要多远，
+   * 取较大的那个：竖屏宽度受限、横屏高度受限，这样两种比例都能填满。
+   */
   _fit() {
-    if (!this.stage) return;
-    // 竖屏时把镜头抬高一点，避免 HUD 盖住头部
-    const portrait = this.stage.height > this.stage.width;
-    this.cameraBaseY = portrait ? 1.02 : 0.98;
-    this.cameraBaseZ = portrait ? 5.4 : 4.6;
+    const st = this.stage;
+    if (!st) return;
+    const vFov = (st.camera.fov * Math.PI) / 180;
+    // 留白：底部要空出提示条的位置，顶部留一点呼吸感
+    const fillY = 0.8;
+    const fillX = 0.88;
+    const subjectH = MODEL_HEIGHT;
+    const subjectW = MODEL_HEIGHT * 0.62; // 手办横向很少超过高度的 62%
+
+    const distH = (subjectH / fillY) / 2 / Math.tan(vFov / 2);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * st.camera.aspect);
+    const distW = (subjectW / fillX) / 2 / Math.tan(hFov / 2);
+
+    this.cameraBaseZ = Math.max(distH, distW);
+    this.cameraBaseY = MODEL_HEIGHT * 0.5;
   }
 
   async show(id) {
@@ -155,13 +175,17 @@ export class Viewer {
       this.current.rotation.x = this.controls.pitch * 0.55;
     }
     const cam = this.stage.camera;
-    const baseY = this.cameraBaseY ?? 1.0;
+    const baseY = this.cameraBaseY ?? MODEL_HEIGHT * 0.56;
     const baseZ = this.cameraBaseZ ?? 4.6;
     const z = baseZ / this.controls.zoom;
     cam.position.x += (0 - cam.position.x) * Math.min(1, dt * 8);
     cam.position.y += (baseY - cam.position.y) * Math.min(1, dt * 8);
     cam.position.z += (z - cam.position.z) * Math.min(1, dt * 8);
-    cam.lookAt(0, 0.92, 0);
+    // 看向模型重心（高度的一半）——写死 0.92 会让模型在画面里偏下
+    const lookY = MODEL_HEIGHT * 0.5;
+    if (this._lookY === undefined) this._lookY = lookY;
+    this._lookY += (lookY - this._lookY) * Math.min(1, dt * 8);
+    cam.lookAt(0, this._lookY, 0);
   }
 
   _tap(e) {

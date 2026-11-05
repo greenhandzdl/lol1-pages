@@ -119,6 +119,41 @@ function renderGrid() {
   syncURL();
 }
 
+
+/**
+ * 地域视图 —— 12 个地名原本只作为角色档案里的一个字段出现，
+ * 这里把它提升成结构：每个人住的地方互不相同，所以一个地名正好对应一个人。
+ * 点地名 = 把图鉴筛到那一位，并滚过去。
+ */
+function renderRegions() {
+  const host = $('#regions-grid');
+  if (!host) return;
+  host.innerHTML = state.all
+    .map((c) => {
+      const [a, b] = c.palette || ['#ffd9e6', '#ffb7d5'];
+      return `<button class="region" type="button" data-id="${c.id}"
+                style="--ra:${a};--rb:${b}">
+          <span class="region__name">${c.region}</span>
+          <span class="region__who">${c.name}</span>
+          <span class="region__el">${c.element}</span>
+        </button>`;
+    })
+    .join('');
+
+  $$('#regions-grid .region').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const c = byId(btn.dataset.id);
+      if (!c) return;
+      // 复用图上已有的搜索框作为筛选手段，保证"地域"和"搜索"是同一套状态
+      state.q = c.region;
+      const input = $('#search');
+      if (input) input.value = c.region;
+      renderGrid();
+      document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
 function renderChips() {
   const tags = [];
   state.all.forEach((c) => c.tags.forEach((t) => { if (!tags.includes(t)) tags.push(t); }));
@@ -437,6 +472,7 @@ async function init() {
 
   $('#search').value = state.q;
   renderChips();
+  renderRegions();
   updateFavToggle();
   $('#sort').value = state.sort;
   if (state.favOnly) $('#fav-toggle').setAttribute('aria-pressed', 'true');

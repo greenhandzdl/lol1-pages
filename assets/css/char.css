@@ -186,3 +186,160 @@ a.tag:hover {
     transition: none;
   }
 }
+
+/* ---------- 长档案区块（批次一）---------- */
+
+/* bio 现在分多段，段间留白比行距大一点，读起来才像"文章"而不是"大段字" */
+.char__bio p {
+  margin: 0 0 0.85em;
+}
+.char__bio p:last-child { margin-bottom: 0; }
+
+.char__block {
+  margin-top: clamp(24px, 3.4vw, 34px);
+  padding-top: clamp(20px, 2.8vw, 26px);
+  border-top: 1px solid var(--line);
+}
+
+.char__blockTitle {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+/* 喜欢 / 不喜欢：左右两栏，窄屏叠起来 */
+.pref {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 520px) {
+  .pref { grid-template-columns: 1fr 1fr; }
+}
+
+.pref__label {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.pref--like .pref__label { color: #e2698f; }
+.pref--dislike .pref__label { color: var(--ink-3); }
+
+.pref__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pref__list li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.pref__list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+}
+
+.char__habit {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ink-1) 4%, transparent);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.char__habit span {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-1) 9%, transparent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.char__regionNote {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.rels {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 520px) {
+  .rels { grid-template-columns: 1fr 1fr; }
+}
+
+.rel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'kind name'
+    'note note';
+  gap: 4px 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card-2, #fff);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.rel:hover,
+.rel:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--ink-1) 18%, transparent);
+  box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.35);
+}
+.rel__kind {
+  grid-area: kind;
+  align-self: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #ff8ab5 16%, transparent);
+  color: #c74d76;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rel__name {
+  grid-area: name;
+  font-weight: 700;
+  color: var(--ink-1);
+}
+.rel__note {
+  grid-area: note;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* 深色主题下关系卡片的底色 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .rel { background: rgba(255, 255, 255, 0.04); }
+  :root:not([data-theme='light']) .rel__kind { background: rgba(255, 138, 181, 0.16); color: #ffa9c6; }
+}
+[data-theme='dark'] .rel { background: rgba(255, 255, 255, 0.04); }
+[data-theme='dark'] .rel__kind { background: rgba(255, 138, 181, 0.16); color: #ffa9c6; }

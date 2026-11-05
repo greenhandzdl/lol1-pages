@@ -9,7 +9,8 @@
     "model": "node scripts/3d/prepare-model.mjs",
     "model:strip": "node scripts/3d/strip-texture.mjs",
     "img": "node scripts/img/build-srcset.mjs",
-    "pages": "node scripts/build-pages.mjs"
+    "pages": "node scripts/build-pages.mjs",
+    "check:data": "node scripts/check-data.mjs"
   },
   "devDependencies": {
     "@gltf-transform/cli": "4.5.1",

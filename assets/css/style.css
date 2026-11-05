@@ -1217,3 +1217,68 @@ body.is-locked { overflow: hidden; }
   cursor: pointer;
 }
 .select:focus { outline: none; border-color: var(--pink); box-shadow: 0 0 0 4px var(--pink-soft); }
+
+/* ---------- 地域视图（批次一）---------- */
+
+.regions {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+/* 每个地名用该角色自己的两色做底，12 个格子天然就是 12 种颜色 */
+.region {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 18px 16px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: linear-gradient(150deg, var(--ra), var(--rb));
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.region::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.12));
+  opacity: 0.9;
+  pointer-events: none;
+}
+.region > * { position: relative; z-index: 1; }
+
+.region:hover,
+.region:focus-visible {
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.4);
+}
+
+.region__name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #3d2b34;
+}
+.region__who {
+  font-size: 0.82rem;
+  color: rgba(61, 43, 52, 0.7);
+}
+.region__el {
+  justify-self: start;
+  margin-top: 8px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #6b4f5c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .region { transition: none; }
+  .region:hover { transform: none; }
+}

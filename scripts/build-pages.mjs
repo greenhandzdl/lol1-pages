@@ -47,7 +47,60 @@ const THEME_BOOT = `    (function () {
 
 /* ---------- 页面模板 ---------- */
 
-function page(c, prev, next) {
+
+/** bio 现在有多段，按空行切开；保留旁注样式 */
+function bioParas(bio) {
+  return (bio || '')
+    .split(/\n{2,}/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t) => `<p>${esc(t)}</p>`)
+    .join('');
+}
+
+/** 喜欢与不喜欢：两组小卡片 */
+function likesBlock(c) {
+  const has = (c.likes && c.likes.length) || (c.dislikes && c.dislikes.length);
+  if (!has) return '';
+  const group = (label, items, cls) =>
+    items && items.length
+      ? `<div class="pref pref--${cls}">
+           <h3 class="pref__label">${label}</h3>
+           <ul class="pref__list">${items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+         </div>`
+      : '';
+  return `<section class="char__block" aria-labelledby="pref-title">
+      <h2 class="char__blockTitle" id="pref-title">喜欢与不喜欢</h2>
+      <div class="pref">
+        ${group('喜欢', c.likes, 'like')}
+        ${group('不喜欢', c.dislikes, 'dislike')}
+      </div>
+      ${c.habit ? `<p class="char__habit"><span>小习惯</span>${esc(c.habit)}</p>` : ''}
+    </section>`;
+}
+
+/** 关系：可点击跳转的角色卡片 + 地域注脚 */
+function relationsBlock(c, byId) {
+  const rels = (c.relations || []).filter((r) => byId.has(r.id));
+  if (!rels.length && !c.regionNote) return '';
+  const cards = rels
+    .map((r) => {
+      const o = byId.get(r.id);
+      return `<a class="rel" href="/c/${o.id}/">
+        <span class="rel__kind">${esc(r.kind || '相识')}</span>
+        <span class="rel__name">${esc(o.name)}</span>
+        <span class="rel__note">${esc(r.note || o.title)}</span>
+      </a>`;
+    })
+    .join('');
+  return `<section class="char__block" aria-labelledby="rel-title">
+      <h2 class="char__blockTitle" id="rel-title">${c.region || ''}的关系</h2>
+      ${c.regionNote ? `<p class="char__regionNote">${esc(c.regionNote)}</p>` : ''}
+      ${cards ? `<div class="rels">${cards}</div>` : ''}
+    </section>`;
+}
+
+function page(c, prev, next, byId) {
   const title = `${c.name} · ${c.title} | 萝莉图鉴`;
   const desc = `${c.name}（${c.nameEn}），${c.title}。${c.tagline} 住在${c.region}，元素是${c.element}。`;
   const url = `${SITE}/c/${c.id}/`;
@@ -131,6 +184,7 @@ ${THEME_BOOT}
 
       <nav class="nav__links" aria-label="主导航">
         <a class="nav__link" href="/#gallery">图鉴</a>
+        <a class="nav__link" href="/#regions">地域</a>
         <a class="nav__link" href="/#about">关于</a>
         <a class="nav__link" href="/#policy">内容政策</a>
         <a class="nav__link" href="/3d/">3D 手办台</a>
@@ -158,7 +212,7 @@ ${THEME_BOOT}
         <h1 class="char__name">${esc(c.name)}</h1>
         <p class="char__en">${esc(c.nameEn)} · ${esc(c.title)}</p>
         <p class="char__tagline">“${esc(c.tagline)}”</p>
-        <p class="char__bio">${esc(c.bio)}</p>
+        <div class="char__bio">${bioParas(c.bio)}</div>
 
         <div class="char__tags">${tags}</div>
 
@@ -168,6 +222,9 @@ ${THEME_BOOT}
           <div><dt>插画</dt><dd>${esc(c.artist)} · seed ${esc(c.seed)}</dd></div>
           ${c.model ? `<div><dt>3D</dt><dd>${esc(c.modelCredit)}</dd></div>` : ''}
         </dl>
+
+        ${likesBlock(c)}
+        ${relationsBlock(c, byId)}
 
         <div class="char__actions">
           ${c.model
@@ -199,6 +256,8 @@ ${THEME_BOOT}
 
 async function main() {
   const { characters } = JSON.parse(await readFile(DATA, 'utf8'));
+  // 关系卡片要拿到被指向角色的名字与标题，用 Map 比每次 find 清楚
+  const byId = new Map(characters.map((c) => [c.id, c]));
 
   // 全量重建，避免删掉角色后残留旧目录
   await rm(OUT, { recursive: true, force: true });
@@ -211,7 +270,7 @@ async function main() {
     // 环形会让「从樱井小春点上一页跳到云雀」显得莫名其妙。
     const prev = i > 0 ? characters[i - 1] : null;
     const next = i < characters.length - 1 ? characters[i + 1] : null;
-    await writeFile(path.join(dir, 'index.html'), page(c, prev, next), 'utf8');
+    await writeFile(path.join(dir, 'index.html'), page(c, prev, next, byId), 'utf8');
     console.log(`  c/${c.id}/`);
   }
 

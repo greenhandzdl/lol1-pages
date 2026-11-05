@@ -7,6 +7,7 @@
  * 全部读本地存档，不发任何请求。
  */
 import { store } from './store.js';
+import { initTheme } from './theme.js';
 
 const state = { all: [], tab: 'all' };
 
@@ -157,4 +158,5 @@ async function init() {
   });
 }
 
+initTheme();
 init();

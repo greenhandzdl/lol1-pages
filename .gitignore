@@ -3,3 +3,8 @@
 .tmp-3d/
 node_modules/
 *.log
+
+# 测试产物
+.pytest_cache/
+__pycache__/
+tests/__pycache__/

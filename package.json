@@ -10,7 +10,10 @@
     "model:strip": "node scripts/3d/strip-texture.mjs",
     "img": "node scripts/img/build-srcset.mjs",
     "pages": "node scripts/build-pages.mjs",
-    "check:data": "node scripts/check-data.mjs"
+    "check:data": "node scripts/check-data.mjs",
+    "test": "./tests/run.sh",
+    "test:fast": "./tests/run.sh tests/test_pages.py tests/test_data.py",
+    "test:data": "./tests/run.sh tests/test_data.py tests/test_crosscheck.py"
   },
   "devDependencies": {
     "@gltf-transform/cli": "4.5.1",

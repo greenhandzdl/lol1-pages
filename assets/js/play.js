@@ -10,6 +10,7 @@
  */
 import { store } from './store.js';
 import { RegionMatch } from './match.js';
+import { initTheme } from './theme.js';
 
 const TRAITS = ['温柔', '体贴', '活泼', '安静', '好奇', '独立'];
 
@@ -254,4 +255,5 @@ async function init() {
   enterMode();
 }
 
+initTheme();
 init();

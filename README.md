@@ -19,6 +19,7 @@ HTML + CSS + Vanilla JS（ES modules）+ 一份 JSON 数据。没有框架、没
 ```
 .
 ├── index.html               # 单页应用
+├── c/<id>/index.html        # 12 个角色独立页（构建产物，勿手改）
 ├── 3d/index.html            # 3D 手办台
 ├── 404.html                 # 404 页
 ├── favicon.svg
@@ -56,6 +57,33 @@ python3 -m http.server 8788
 ```
 
 因为数据通过 `fetch` 加载，直接双击 `index.html` 不行，需要起一个静态服务器。
+
+## 构建脚本
+
+```bash
+npm run img     # 重出插画 400/600 档（源图 mtime 未变则跳过）
+npm run pages   # 重生成 c/<id>/ 12 个角色页
+```
+
+改了 `characters.json` 之后记得跑 `npm run pages`，并把 `c/` 一起提交 ——
+GitHub Pages 不跑构建，产物必须入仓。
+
+### 插画档位
+
+插画原图 768×1024，另有 400w / 600w 两档供 `srcset` 选。
+
+- **为什么不导 -768**：原图本来就是 768，再导一份实测只小 2KB，白多 12 个文件
+- **为什么不用 AVIF**：实测 400px 档 AVIF 反而比 WebP 大（44.7KB vs 39.9KB），
+  小尺寸下 AVIF 的头开销盖过了压缩优势
+
+实测收益（DPR3 手机，同批 3 拍立得 + 4 卡片）：722KB → 427KB，省 41%。
+
+## 角色页
+
+`/c/<id>/` 是构建期生成的静态页，正文不依赖 JS —— 爬虫不执行 JS 也能读到
+完整档案。每页带独立的 `title` / `canonical` / `og:image` / `Person` 结构化数据。
+
+内容只在 `characters.json` 里改，不要手改 `c/` 下的 HTML。
 
 ## 插画
 

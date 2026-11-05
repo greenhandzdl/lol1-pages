@@ -244,9 +244,12 @@ async function prepareOne(charId) {
   if (!ch) throw new Error(`未找到角色: ${charId}`);
 
   console.log(`\n▶ ${ch.name} (${charId})`);
-  const src = path.basename(ch.image);
+  // 建模图与插画分开：插画是给人看的，可以有桌椅/货架/宠物；Hunyuan3D
+  // 只认「一个独立的人」。构图太满的角色单独出 modelSource（见 gen-reference.mjs）。
+  const source = ch.modelSource || ch.image;
+  if (ch.modelSource) console.log(`  · 使用构图板 ${ch.modelSource}`);
   // webp → png 之后塞进 ComfyUI 输入目录（ComfyUI 只读自己的 input/）
-  await run('magick', [path.join(ROOT, ch.image), path.join(COMFY_INPUT, `src_${charId}.png`)], {
+  await run('magick', [path.join(ROOT, source), path.join(COMFY_INPUT, `src_${charId}.png`)], {
     cwd: ROOT,
   });
 

@@ -148,14 +148,34 @@ node scripts/3d/prepare-model.mjs in.glb out.glb
 
 ### 当前模型覆盖
 
-12 位角色里 10 位有 3D 手办，`chacha` 和 `suzuka` 走立牌模式。
+12 位角色全部有 3D 手办，没有走立牌降级的。
 
-这两位不是「跑失败」，是插画不适合做手办：
-- `chacha` 是**坐姿**，人和椅子长在一起，Hunyuan3D 分不开，转起来是一团；
+`chacha` 和 `suzuka` 一度做不出来 —— 它们原有的插画不适合建模：
+
+- `chacha` 是**坐姿**，人和椅子、餐桌长在一起，Hunyuan3D 分不开，转起来是一团；
 - `suzuka` 被猫、南瓜、货架围住，人和道具连成一片，剪出来满身挂件。
 
-其余 10 位用同一套流程一次成像。补齐这两位需要换构图（站姿、干净背景），
-不是调参数能解决的。
+**解法不是调参数，是把「给人看的插画」和「给机器看的构图板」分开。**
+
+`characters.json` 里新增 `modelSource` 字段，指向一张单独的构图板
+（`assets/img/refs/<id>.webp`）。这张图只服务建模：站姿、正面、四肢分开、
+纯白背景、没有任何会挡身体的道具。站点插画完全不动，视觉一致性不受影响。
+
+构图板由 `scripts/3d/gen-reference.mjs` 出，用的是跑通 Anima 插画的同一套参数：
+
+```bash
+node scripts/3d/gen-reference.mjs chacha --n=6   # 出 6 张候选挑一张
+node scripts/3d/gen-reference.mjs --all
+```
+
+### 构图板的两个要点
+
+1. **脸必须露出来**。第一版没加约束，刘海盖住眼睛，模型推不出五官起伏，
+   出来是一团面片。提示词里补 `clear facial features, visible eyes,
+   no hair covering eyes` 后正常。
+2. **顶点预算按角色调**。默认 36k 顶点对简单角色够用，但这两位裙摆/帽檐结构
+   复杂，36k 时脸会塌成碎面。用 `TARGET_VERTS=120000` 重跑后明显改善
+   （茶茶 240KB、铃鹿 300KB，仍在合理范围）。
 
 ### 让模型不塌的三个预处理
 

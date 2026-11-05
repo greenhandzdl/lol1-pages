@@ -90,13 +90,16 @@
         "优雅"
       ],
       "image": "assets/img/works/chacha.webp",
+      "modelSource": "assets/img/refs/chacha.webp",
       "palette": [
         "#ffe7d1",
         "#e9b78f"
       ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1004
+      "seed": 1004,
+      "model": "assets/models/chacha.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "suzuka",
@@ -113,13 +116,16 @@
         "俏皮"
       ],
       "image": "assets/img/works/suzuka.webp",
+      "modelSource": "assets/img/refs/suzuka.webp",
       "palette": [
         "#ffe1c2",
         "#ffb36b"
       ],
       "artist": "Anima · AI 生成",
       "license": "AI 生成 · 仅供欣赏",
-      "seed": 1005
+      "seed": 1005,
+      "model": "assets/models/suzuka.glb",
+      "modelCredit": "Hunyuan3D 2.1 · AI 生成几何"
     },
     {
       "id": "umi",

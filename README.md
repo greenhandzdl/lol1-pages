@@ -75,6 +75,10 @@ npm run check:data   # 校验 characters.json（关系指向、重名、文件�
 npm run img          # 重出插画 400/600 档（源图 mtime 未变则跳过）
 npm run pages        # 重生成 c/<id>/ 12 个角色页 + 首页 noscript 兜底 + sitemap + feed
 npm run release      # check:data → pages → 全量测试，发布前一条命令
+
+# 改了 .glb 之后重渲 3D 缩略图（产物进仓库，不进 CI）
+TEST_VENV=/path/to/venv ./scripts/build-model-thumbs.py            # 全部
+TEST_VENV=/path/to/venv ./scripts/build-model-thumbs.py sakura mint  # 只渲指定的
 ```
 
 改了 `characters.json` 之后记得跑 `npm run pages`，并把 `c/` 一起提交 ——

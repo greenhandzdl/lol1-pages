@@ -253,7 +253,15 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+/* 三个按钮挤在 366px 的面板里，原先是 flex:1 1 auto + wrap ——
+ * 「开始寻星」比另两个宽，一行放不下就折成两行，第二个按钮孤零零占半行。
+ * 改成按钮按内容宽度、主按钮吃掉剩余空间，一行放得下。 */
 .stage__actions .btn {
+  flex: 0 1 auto;
+  padding-inline: 0.85rem;
+  white-space: nowrap;
+}
+.stage__actions .btn--primary {
   flex: 1 1 auto;
 }
 .stage__keys {
@@ -387,3 +395,65 @@
 .stage__side dd { color: var(--pa-ink); transition: color 0.4s var(--ease); }
 .stage__tagline { border-left: 3px solid var(--pb); padding-left: 12px; transition: border-color 0.4s var(--ease); }
 .stage__tagline { border-left: 3px solid var(--pb); }
+
+/* ---------- 缩略图条（批次 P1）----------
+ * 12 个模型在服务器上离线渲染成 420px 的 PNG（约 60KB/张），
+ * 这里只显示 48px。「上一个 / 下一个」一次只能挪一格，读者看不到全景。
+ */
+.stage__strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin: 14px 0 4px;
+}
+.stage__thumb {
+  appearance: none;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 6px 2px 4px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--pb, var(--pink-2)) 8%, transparent);
+  cursor: pointer;
+  transition: border-color 0.18s var(--ease), background 0.18s var(--ease),
+              transform 0.18s var(--ease);
+}
+.stage__thumb img,
+.stage__thumb span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  object-fit: contain;
+}
+.stage__thumb em {
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.stage__thumb:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--pb, var(--pink-2)) 40%, transparent);
+}
+.stage__thumb:focus-visible {
+  outline: 2px solid var(--pa, var(--pink));
+  outline-offset: 2px;
+}
+.stage__thumb[aria-current='true'] {
+  border-color: var(--pb, var(--pink-2));
+  background: color-mix(in srgb, var(--pb, var(--pink-2)) 18%, transparent);
+}
+.stage__thumb[aria-current='true'] em { color: var(--pa-ink, var(--ink)); }
+
+/* 窄屏：一屏 6 个太小，改成一行 4 个，两行（仍然比翻页好） */
+@media (max-width: 700px) {
+  .stage__strip { grid-template-columns: repeat(4, 1fr); }
+  .stage__thumb img, .stage__thumb span { width: 40px; height: 40px; }
+}

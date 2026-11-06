@@ -10,6 +10,7 @@
  */
 import { store } from './store.js';
 import { RegionMatch } from './match.js';
+import { traitBars } from './traits.js';
 import { initTheme } from './theme.js';
 
 const TRAITS = ['温柔', '体贴', '活泼', '安静', '好奇', '独立'];
@@ -202,6 +203,7 @@ function renderResult() {
             所以你会遇见住在${c.region}的她。
           </p>
           <p class="quiz__quote">“${c.tagline}”</p>
+          ${traitBars(c.traits, { variant: 'compare', mine: v })}
           <div class="quiz__acts">
             <a class="btn btn--primary" href="/c/${c.id}/">看她的档案 →</a>
             <a class="btn btn--ghost" href="/c/${c.id}/#story">读她的一天</a>

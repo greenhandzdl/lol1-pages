@@ -1088,6 +1088,15 @@ button, input, select { font: inherit; color: inherit; }
 .detail__meta dd { margin: 0; color: var(--ink-2); text-align: right; }
 .detail__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
 
+/* 弹窗里的六维性格：弹窗本来就长，这里只给最小高度，别再加一条分隔线
+ * （上面的 dl 已经有边框了，再加一层视觉噪音太大） */
+.detail__traits { margin: 0.1rem 0 0.2rem; }
+.detail__traits:empty { display: none; }
+.detail__traits .traits { max-width: 100%; gap: 6px; }
+.detail__traits .traits__row { grid-template-columns: 2.9em 1fr; gap: 10px; }
+.detail__traits .traits__name { font-size: 0.72rem; }
+.detail__traits .traits__bar { height: 6px; }
+
 /* ---------- 详情里的关系（弹窗内那条路）---------- */
 
 .detail__relTitle {
@@ -1816,6 +1825,18 @@ body.is-locked { overflow: hidden; }
   font-size: 0.64rem;
   font-weight: 700;
 }
+/* note 跟在名字后面，浅色小字；浮层本身要限宽，否则长 note 会把它撑开 */
+.web__popNote {
+  margin-left: auto;
+  padding-left: 0.4rem;
+  font-style: normal;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  max-width: 9.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .web__popMore {
   display: inline-block;
   margin-top: 0.55rem;
@@ -2032,4 +2053,193 @@ html::after {
 @media (prefers-reduced-motion: no-preference) {
   .now__card { transition: opacity 0.2s ease; }
   .now__card.is-switching { opacity: 0.35; }
+}
+
+/* ---------- 全部关系故事（批次 O2）----------
+ * 放在关系网下面，默认收起。19 段 × 80 字全展开会把 #web 从 991px 撑到
+ * 四五屏，而 visitor 大多数时候只是想知道"谁和谁有什么关系"。
+ */
+.webStory {
+  margin-top: 1.6rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.webStory > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-2, var(--ink));
+}
+.webStory > summary::-webkit-details-marker { display: none; }
+.webStory > summary::before {
+  content: '＋';
+  color: var(--pink-2);
+  margin-right: 0.4em;
+}
+.webStory[open] > summary::before { content: '－'; }
+.webStory > summary:focus-visible {
+  outline: 2px solid var(--pink-2);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.webStory__list {
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+  .webStory__list { grid-template-columns: 1fr 1fr; gap: 1.2rem 2rem; }
+}
+.webStory__list li {
+  padding-left: 0.9rem;
+  border-left: 2px solid color-mix(in srgb, var(--pink) 45%, transparent);
+}
+.webStory__pair {
+  margin: 0 0 0.3rem;
+  font-size: 0.84rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.webStory__pair a { color: var(--ink); text-decoration: none; font-weight: 700; }
+.webStory__pair a:hover { text-decoration: underline; }
+.webStory__pair span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  background: color-mix(in srgb, var(--pink) 16%, transparent);
+  color: var(--pink-ink);
+}
+.webStory__list p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.72;
+  color: var(--ink-2, var(--ink));
+}
+.webStory__note { color: var(--ink-3) !important; }
+
+/* ---------- 今天读一句（批次 P3）----------
+ * 一条 1 行高的窄带子，不是 section：首页 1440 下已经 7500px，
+ * 满宽 section 会把图鉴推得更远。窄带只占 ~44px。
+ * 没有 JS 时这里是空的（CSS 给了 min-height 会留白，所以用 :empty 收掉）。
+ */
+.quote {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 0 0.85rem;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+  border-block: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.quote:empty { display: none; }
+.quote__text {
+  margin: 0;
+  flex: 1 1 22rem;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.quote__who {
+  flex: none;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.quote__who span { color: var(--pink-ink); font-weight: 700; }
+.quote__who:hover { color: var(--ink); }
+@media (max-width: 560px) {
+  .quote { gap: 0.3rem; padding-block: 0.7rem; }
+  .quote__text { font-size: 0.92rem; }
+}
+
+/* ---------- 十二个地方的点阵（批次 P2）----------
+ * 不画地图：12 个地点是虚构的，没有经纬度，画成地图会让读者当成真的读。
+ * 画的是"谁离谁近"—— 点的位置是人为定的方位，连线是数据里已有的关系。
+ * 所以 figcaption 里必须写清楚"不是道路"，否则它就是一张假地图。
+ */
+.rmap {
+  margin: 0 0 1.6rem;
+}
+.rmap__canvas {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-height: 420px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(70% 60% at 50% 40%, color-mix(in srgb, var(--pink-soft) 22%, transparent), transparent 70%),
+    var(--surface);
+  overflow: hidden;
+}
+.rmap__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rmap__link {
+  stroke: var(--line-2, var(--line));
+  stroke-width: 0.35;
+  stroke-dasharray: 1.6 1.6;
+  vector-effect: non-scaling-stroke;
+}
+.rmap__dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  appearance: none;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.rmap__dot i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--pink-2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 18%, transparent);
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.rmap__dot span {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-2, var(--ink));
+  white-space: nowrap;
+}
+.rmap__dot:hover i,
+.rmap__dot:focus-visible i {
+  transform: scale(1.5);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--pink) 26%, transparent);
+}
+.rmap__dot:focus-visible { outline: none; }
+.rmap__dot:focus-visible span { color: var(--pink-ink); font-weight: 700; }
+.rmap__cap {
+  margin: 0.7rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+/* 悬停时对应的地域卡片也亮起来 */
+.region.is-hot {
+  border-color: color-mix(in srgb, var(--pa, var(--pink-2)) 55%, transparent);
+}
+at media (max-width: 560px) {
+  .rmap__canvas { aspect-ratio: auto; height: 260px; }
+  .rmap__dot span { font-size: 0.62rem; }
 }

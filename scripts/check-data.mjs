@@ -102,6 +102,28 @@ for (const c of list) {
     if (r.kind && !RELATION_KINDS.includes(r.kind)) {
       fail(`${at} 关系类型「${r.kind}」不在白名单（${RELATION_KINDS.join('/')}）`);
     }
+    // 关系故事：第五轮加的。两个人两个方向写同一段，这里只按"对"校验长度，
+    // 否则同一条会被检查两遍，警告也出两次。
+    if (r.story && c.id < r.id) {
+      const n = r.story.length;
+      if (n < 50) warn(`[${c.id}–${r.id}] 关系故事只有 ${n} 字（目标 ≥50）`);
+      if (n > 140) warn(`[${c.id}–${r.id}] 关系故事 ${n} 字，浮层放不下（目标 ≤140）`);
+    }
+  }
+}
+
+// 同一对关系的两个方向必须写同一段故事，否则读者从 A 页和 B 页看到的是两件事
+{
+  const seen = new Map();
+  for (const c of list) {
+    for (const r of c.relations || []) {
+      const key = [c.id, r.id].sort().join('–');
+      const prev = seen.get(key);
+      if (prev && r.story && prev !== r.story) {
+        fail(`关系故事不对称：${key} 两个方向写的不一样`);
+      }
+      if (r.story) seen.set(key, r.story);
+    }
   }
 }
 

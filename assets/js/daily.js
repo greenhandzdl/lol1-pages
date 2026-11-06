@@ -72,3 +72,23 @@ export function suggestOfDay(dateKey, pick) {
   if (s.href === '/c/') return { label: '从图鉴里挑一个人读', href: '/#gallery' };
   return s;
 }
+
+/**
+ * 今天读一句 —— 从全站 36 句台词里按日期挑一句。
+ *
+ * voice 是第四轮才加的数据，现在只在角色页出现：读者得点进某个人的
+ * 档案才能看到她说的话。这里把其中一句提到首页，同一天固定。
+ *
+ * 刻意不用随机数：刷新一次换一句就没有"今天这句"这件事了。
+ * 也不做「下一条」按钮 —— 能翻就不是"今天"了。
+ */
+export function quoteOfDay(all, dateKey) {
+  // 把 (角色, 第几句) 摊平成一张表，这样每句都有自己的位置，
+  // 不会因为某人写了三句就比只写一句的人更容易被抽到
+  const pool = [];
+  for (const c of all) {
+    (c.voice || []).forEach((line, i) => pool.push({ c, line, i }));
+  }
+  if (!pool.length) return null;
+  return pool[hash(`quote::${dateKey}::${pool.length}`) % pool.length];
+}

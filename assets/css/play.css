@@ -356,3 +356,62 @@
   .mt__item:hover:not(.is-done) { transform: none; }
   .mt__item.is-bad { animation: none; }
 }
+
+/* 测试结果的"你 vs 她"对照：同一维度上下两行，差别一眼看出 */
+.traitCmp {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.traitCmp__legend {
+  display: flex;
+  gap: 14px;
+  margin: 0 0 2px;
+  font-size: 0.72rem;
+}
+.traitCmp__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+}
+.traitCmp__key::before {
+  content: '';
+  width: 14px;
+  height: 6px;
+  border-radius: 999px;
+}
+.traitCmp__key--me::before { background: color-mix(in srgb, var(--ink) 38%, transparent); }
+.traitCmp__key--her::before { background: var(--pink-2); }
+.traitCmp__row {
+  display: grid;
+  grid-template-columns: 3.2em 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.traitCmp__name {
+  font-size: 0.78rem;
+  color: var(--ink-2, var(--ink));
+}
+.traitCmp__pair { display: grid; gap: 4px; }
+/* span 默认是 inline，光写 height/overflow 不会生效 —— 条宽会变成 0 */
+.traitCmp__bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line-2, var(--line));
+  overflow: hidden;
+}
+.traitCmp__bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.5s var(--ease);
+}
+.traitCmp__bar--me > i { background: color-mix(in srgb, var(--ink) 38%, transparent); }
+.traitCmp__bar--her > i { background: linear-gradient(90deg, var(--pink), var(--pink-2)); }
+@media (prefers-reduced-motion: reduce) {
+  .traitCmp__bar > i { transition: none; }
+}

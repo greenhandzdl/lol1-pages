@@ -1,9 +1,11 @@
 /* lol1.moe · 萝莉图鉴 — vanilla ES module */
 import { collapseNav } from './nav-collapse.js';
 import { store, todayKey } from './store.js';
-import { pickOfDay, lineOfDay, suggestOfDay } from './daily.js';
+import { pickOfDay, lineOfDay, suggestOfDay, quoteOfDay } from './daily.js';
 import { glyphSvg } from './glyphs.js';
 import { accentStyle } from './accent.js';
+import { traitBars } from './traits.js';
+import { regionMap } from './regions.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -151,6 +153,40 @@ function renderGrid() {
 function renderRegions() {
   const host = $('#regions-grid');
   if (!host) return;
+
+  const pickRegion = (c) => {
+    // 复用图上已有的搜索框作为筛选手段，保证"地域"和"搜索"是同一套状态
+    state.q = c.region;
+    const input = $('#search');
+    if (input) input.value = c.region;
+    renderGrid();
+    document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // 点阵放在卡片上方：先给"这些地方大概在哪"，再给"每个地方叫什么"
+  const mapHost = $('#regions-map');
+  if (mapHost && !mapHost.dataset.done) {
+    mapHost.innerHTML = regionMap(state.all);
+    mapHost.dataset.done = '1';
+    mapHost.addEventListener('click', (e) => {
+      const dot = e.target.closest('.rmap__dot');
+      if (!dot) return;
+      const c = byId(dot.dataset.id);
+      if (c) pickRegion(c);
+    });
+    // 悬停时把对应的卡片也点亮，反过来也一样
+    mapHost.addEventListener('mouseover', (e) => {
+      const dot = e.target.closest('.rmap__dot');
+      if (!dot) return;
+      $$('#regions-grid .region').forEach((b) =>
+        b.classList.toggle('is-hot', b.dataset.id === dot.dataset.id),
+      );
+    });
+    mapHost.addEventListener('mouseout', () => {
+      $$('#regions-grid .region').forEach((b) => b.classList.remove('is-hot'));
+    });
+  }
+
   host.innerHTML = state.all
     .map(
       (c) => `<button class="region" type="button" data-id="${c.id}"
@@ -166,13 +202,7 @@ function renderRegions() {
   $$('#regions-grid .region').forEach((btn) => {
     btn.addEventListener('click', () => {
       const c = byId(btn.dataset.id);
-      if (!c) return;
-      // 复用图上已有的搜索框作为筛选手段，保证"地域"和"搜索"是同一套状态
-      state.q = c.region;
-      const input = $('#search');
-      if (input) input.value = c.region;
-      renderGrid();
-      document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (c) pickRegion(c);
     });
   });
 }
@@ -307,6 +337,24 @@ function renderNow() {
   show(initial, false);
 }
 
+/**
+ * 首页窄条：今天读一句。
+ *
+ * voice 是第四轮加的（每人三句，共 36 句），但只在角色页出现 ——
+ * 读者得先决定点进谁，才可能读到。这里把一句提到首页。
+ *
+ * 做成窄条而不是区块：首页已经有 8 个 section、1440 下 7550px，
+ * 再加一个满宽 section 会把"图鉴"推得更远。一条 1 行高的带子就够了。
+ */
+function renderQuote() {
+  const host = $('#quote-line');
+  if (!host) return;
+  const q = quoteOfDay(state.all, todayKey());
+  if (!q) { host.innerHTML = ''; return; }
+  host.innerHTML = `<p class="quote__text">“${q.line}”</p>
+    <a class="quote__who" href="/c/${q.c.id}/"><span>${q.c.name}</span> · ${q.c.title} →</a>`;
+}
+
 function renderDaily() {
   const host = $('#daily-body');
   if (!host) return;
@@ -348,6 +396,38 @@ function renderDaily() {
  * 节点曾经是 <a href="/c/<id>/"> —— 一碰就跳走，等于看不到这张网。
  * 现在改成 role="button"：点一下在旁边弹出这个人的关系，跳页面放进气囊里。
  */
+/**
+ * 全部关系故事，放在图下面折叠起来。
+ *
+ * 关系网是一张图 —— 能看出"谁和谁连着"，看不出"她们之间发生过什么"。
+ * 19 段故事全展开会把 #web 撑到四五屏，所以默认收起；
+ * <details> 是原生的，没有 JS 也能开合。
+ */
+function webStories(edges) {
+  if (!edges.length) return '';
+  const byId = new Map(state.all.map((c) => [c.id, c]));
+  const items = edges
+    .map((e) => {
+      const a = byId.get(e.a);
+      const b = byId.get(e.b);
+      if (!a || !b) return '';
+      const story = e.story ? `<p>${e.story}</p>` : '';
+      return `<li>
+        <p class="webStory__pair">
+          <a href="/c/${a.id}/">${a.name}</a>
+          <span>${e.kind || '相识'}</span>
+          <a href="/c/${b.id}/">${b.name}</a>
+        </p>
+        ${story || `<p class="webStory__note">${e.note || ''}</p>`}
+      </li>`;
+    })
+    .join('');
+  return `<details class="webStory">
+    <summary>读全部 ${edges.length} 段关系故事</summary>
+    <ol class="webStory__list">${items}</ol>
+  </details>`;
+}
+
 function renderWeb() {
   const host = $('#web-graph');
   if (!host) return;
@@ -372,7 +452,7 @@ function renderWeb() {
       const k = [c.id, r.id].sort().join('|');
       if (seen.has(k) || !pos.has(r.id)) return;
       seen.add(k);
-      edges.push({ a: c.id, b: r.id, kind: r.kind });
+      edges.push({ a: c.id, b: r.id, kind: r.kind, note: r.note, story: r.story });
     });
   });
 
@@ -423,7 +503,8 @@ function renderWeb() {
       <g class="web__nodes">${nodes}</g>
     </svg>
     <ul class="web__legend">${legend}</ul>
-    <div class="web__pop" id="web-pop" hidden></div>`;
+    <div class="web__pop" id="web-pop" hidden></div>
+    ${webStories(edges)}`;
 
   // 悬停（或聚焦）时高亮这个人的所有连线
   const allLines = $$('.web__edge', host);
@@ -483,7 +564,9 @@ function openWebPop(id, node) {
     <ul class="web__popList">${rels
       .map((r) => {
         const o = byId(r.id);
-        return `<li><span class="web__popKind">${r.kind || '相识'}</span><a href="/c/${o.id}/">${o.name}</a></li>`;
+        // note 一句话 + story 一件事：浮层里只放 note，点进去才有故事，
+        // 否则 4 条关系 × 80 字会把浮层撑到屏幕外
+        return `<li><span class="web__popKind">${r.kind || '相识'}</span><a href="/c/${o.id}/">${o.name}</a><i class="web__popNote">${r.note || ''}</i></li>`;
       })
       .join('')}</ul>
     <a class="web__popMore" href="/c/${id}/">打开她的档案 →</a>`;
@@ -686,6 +769,9 @@ function openDetail(id, trigger) {
       closeDetail();
       applyTheme(btn.dataset.theme);
     }));
+  // 六维性格：弹窗是大多数人唯一会看的地方，不能只在专页上有
+  const traitsEl = $('#detail-traits');
+  if (traitsEl) traitsEl.innerHTML = traitBars(c.traits);
   renderDetailRels(c);
   const indexEl = $('#detail-index');
   indexEl.textContent = idx >= 0 ? `${idx + 1} / ${list.length}` : '';
@@ -962,6 +1048,7 @@ async function init() {
   renderRegions();
   renderProgress();
   renderDaily();
+  renderQuote();
   renderNow();
   renderWeb();
   updateFavToggle();

@@ -6,6 +6,7 @@
  */
 import { Viewer, siteURL } from './viewer.js';
 import { accentVars } from '../accent.js';
+import { glyphSvg } from '../glyphs.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -71,6 +72,16 @@ function paintPanel(ch, hasModel) {
   if (fallback) {
     fallback.src = siteURL(ch.image);
     fallback.alt = `插画：${ch.name} · ${ch.title}`;
+  }
+
+  // 缩略图条的高亮跟着换。strip 可能在 paintPanel 第一次调用之后才渲染，
+  // 所以这里查不到就算了，不报错。
+  const strip = $('#stage-strip');
+  if (strip) {
+    strip.querySelectorAll('.stage__thumb').forEach((b) => {
+      if (b.dataset.id === ch.id) b.setAttribute('aria-current', 'true');
+      else b.removeAttribute('aria-current');
+    });
   }
 }
 
@@ -146,6 +157,27 @@ async function init() {
 
   $('#prev-btn').addEventListener('click', () => go(-1));
   $('#next-btn').addEventListener('click', () => go(1));
+
+  // 缩略图条：12 个人一眼看全，「上一个 / 下一个」只能一格格挪。
+  // 图是离线渲染好的（scripts/build-model-thumbs.py），点一下才加载 glb。
+  const strip = $('#stage-strip');
+  if (strip) {
+    strip.innerHTML = state.all
+      .map(
+        (c) => `<button class="stage__thumb" type="button" data-id="${c.id}"
+          aria-label="看 ${c.name} 的手办"${c.id === ch.id ? ' aria-current="true"' : ''}>
+          ${c.model ? `<img src="/assets/img/models/${c.id}.png" width="48" height="48" alt="" loading="lazy" decoding="async">` : `<span>${glyphSvg(c.element, { size: 22 })}</span>`}
+          <em>${c.name}</em>
+        </button>`,
+      )
+      .join('');
+    strip.addEventListener('click', (e) => {
+      const btn = e.target.closest('.stage__thumb');
+      if (!btn) return;
+      const i = state.all.findIndex((x) => x.id === btn.dataset.id);
+      if (i >= 0) state.viewer?.show?.(state.all[i].id);
+    });
+  }
 
   document.addEventListener('keydown', (e) => {
     if (e.target.matches('input, textarea, select')) return;

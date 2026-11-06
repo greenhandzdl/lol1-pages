@@ -21,6 +21,7 @@ import path from 'node:path';
 // 图形与 accent 走同一份运行时模块，角色页的静态 SVG 和首页的运行时 SVG 必然一致
 import { glyphSvg, glyphMask } from '../assets/js/glyphs.js';
 import { accentStyle } from '../assets/js/accent.js';
+import { traitBars, nearest } from '../assets/js/traits.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DATA = path.join(ROOT, 'assets/data/characters.json');
@@ -160,6 +161,24 @@ function likesBlock(c) {
     </section>`;
 }
 
+/** 性格：六维条 + 与她最像的两个人 */
+function traitsBlock(c, all) {
+  if (!c.traits) return '';
+  // 相似度是纯前端算的，不依赖读者做没做过测试 —— 但措辞上只能说
+  // "她们俩彼此最像"，不能说"和你最像"，后者需要读者自己的分值。
+  const near = nearest(c, all, 2).filter((x) => x.s > 0.8);
+  const nearLine = near.length
+    ? `<p class="char__habit"><span>相近</span>${near
+        .map((x) => `<a href="/c/${x.c.id}/">${esc(x.c.name)}</a>`)
+        .join('、')} —— 六维里有 ${Math.round(near[0].s * 100)}% 重合</p>`
+    : '';
+  return `<section class="char__block" aria-labelledby="traits-title" id="traits">
+      <h2 class="char__blockTitle" id="traits-title">她的性格</h2>
+      ${traitBars(c.traits)}
+      ${nearLine}
+    </section>`;
+}
+
 /** 关系：可点击跳转的角色卡片 + 地域注脚 */
 function relationsBlock(c, byId) {
   const rels = (c.relations || []).filter((r) => byId.has(r.id));
@@ -167,11 +186,22 @@ function relationsBlock(c, byId) {
   const cards = rels
     .map((r) => {
       const o = byId.get(r.id);
-      return `<a class="rel" href="/c/${o.id}/">
-        <span class="rel__kind">${esc(r.kind || '相识')}</span>
-        <span class="rel__name">${esc(o.name)}</span>
-        <span class="rel__note">${esc(r.note || o.title)}</span>
-      </a>`;
+      // 故事用 <details> 折叠：19 段全展开会把这一块撑到三倍高，
+      // 而折叠态的高度和第五轮之前完全一样（details 合起来只占标题行）。
+      return `<div class="rel">
+        <a class="rel__link" href="/c/${o.id}/">
+          <span class="rel__kind">${esc(r.kind || '相识')}</span>
+          <span class="rel__name">${esc(o.name)}</span>
+          <span class="rel__note">${esc(r.note || o.title)}</span>
+        </a>${
+          r.story
+            ? `<details class="rel__more">
+            <summary>读她们的一件事</summary>
+            <p>${esc(r.story)}</p>
+          </details>`
+            : ''
+        }
+      </div>`;
     })
     .join('');
   return `<section class="char__block" aria-labelledby="rel-title">
@@ -181,7 +211,7 @@ function relationsBlock(c, byId) {
     </section>`;
 }
 
-function page(c, prev, next, byId) {
+function page(c, prev, next, byId, all) {
   const title = `${c.name} · ${c.title} | 萝莉图鉴`;
   const desc = `${c.name}（${c.nameEn}），${c.title}。${c.tagline} 住在${c.region}，元素是${c.element}。`;
   const url = `${SITE}/c/${c.id}/`;
@@ -315,6 +345,7 @@ ${THEME_BOOT}
         ${voiceBlock(c)}
         ${storyBlock(c)}
         ${likesBlock(c)}
+        ${traitsBlock(c, all)}
         ${relationsBlock(c, byId)}
 
         <div class="char__actions">
@@ -451,7 +482,7 @@ async function main() {
     // 环形会让「从樱井小春点上一页跳到云雀」显得莫名其妙。
     const prev = i > 0 ? characters[i - 1] : null;
     const next = i < characters.length - 1 ? characters[i + 1] : null;
-    await writeFile(path.join(dir, 'index.html'), page(c, prev, next, byId), 'utf8');
+    await writeFile(path.join(dir, 'index.html'), page(c, prev, next, byId, characters), 'utf8');
     console.log(`  c/${c.id}/`);
   }
 

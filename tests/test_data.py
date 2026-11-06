@@ -309,3 +309,44 @@ def test_check_data_accepts_voice_field():
     src = (ROOT / "scripts/check-data.mjs").read_text(encoding="utf-8")
     required = src[src.index("const REQUIRED = ["):src.index("];", src.index("const REQUIRED = ["))]
     assert "'voice'" in required, "REQUIRED 里没有 voice：拼错的字段名不会被发现"
+
+
+def test_relation_stories_unique(chars):
+    """19 对关系的故事必须各不相同。
+
+    模板化成同一句话（只换名字）是最容易犯的错，而且肉眼看一遍看不出来 ——
+    19 段文字同一个句式会让人以为是自动生成的。
+    """
+    stories = {}
+    for c in chars:
+        for r in c.get("relations", []):
+            if r.get("story"):
+                stories["-".join(sorted([c["id"], r["id"]]))] = r["story"]
+    assert stories, "一条关系故事都没有"
+    assert len(set(stories.values())) == len(stories), "有关系故事重复了"
+
+
+def test_relation_story_symmetric(chars):
+    """同一对关系，两个方向必须写同一段。
+
+    读者从 A 的页面和 B 的页面看到的是两个人共同的经历，
+    两份说法不一样就成了两个故事。
+    """
+    seen = {}
+    for c in chars:
+        for r in c.get("relations", []):
+            key = "-".join(sorted([c["id"], r["id"]]))
+            if r.get("story"):
+                if key in seen:
+                    assert seen[key] == r["story"], f"{key} 两个方向写的不一样"
+                seen[key] = r["story"]
+
+
+def test_relation_story_length(chars):
+    """故事长度：太短没内容，太长撑破浮层和折叠面板。"""
+    for c in chars:
+        for r in c.get("relations", []):
+            s = r.get("story", "")
+            if not s:
+                continue
+            assert 50 <= len(s) <= 140, f"{c['id']}→{r['id']} 故事 {len(s)} 字，超出 50–140"

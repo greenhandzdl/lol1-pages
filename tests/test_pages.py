@@ -397,3 +397,77 @@ def test_content_visible_without_javascript(server, browser):
     )
     assert cards >= 1, "首页应该有 noscript 兜底"
     ctx.close()
+
+
+def test_traits_visible_on_char_page(server, page):
+    """六维性格必须出现在角色页上。
+
+    第五轮之前 traits 只在 play.js 的余弦计算里当中间变量，
+    界面上一次都没渲染过 —— 这是全站结构化程度最高的数据。
+    """
+    page.goto(BASE + "/c/sakura/", wait_until="networkidle")
+    n = page.evaluate("() => document.querySelectorAll('#traits .traits__row').length")
+    assert n == 6, f"期望 6 个性格维度，实际 {n}"
+
+
+def test_trait_bars_have_accessible_names(server, page):
+    """条本身是装饰，整块必须有一句可读的 aria-label，否则读屏读不到。"""
+    page.goto(BASE + "/c/sakura/", wait_until="networkidle")
+    label = page.evaluate(
+        "() => document.querySelector('#traits .traits')?.getAttribute('aria-label') || ''"
+    )
+    assert "温柔" in label and "分" in label, f"性格块的 aria-label 不合格: {label!r}"
+
+
+def test_quiz_shows_trait_comparison(server, page):
+    """测试结果要给出「你 vs 她」的分项对照，而不只是一句结论。"""
+    page.goto(BASE + "/play/", wait_until="networkidle")
+    page.click("#quiz-start")
+    for _ in range(7):
+        page.locator("#play-body .quiz__opt").first.click()
+        page.wait_for_timeout(120)
+    page.wait_for_selector(".traitCmp", timeout=5000)
+    rows = page.evaluate("() => document.querySelectorAll('.traitCmp__row').length")
+    assert 2 <= rows <= 3, f"对照应只显示差异最大的 2–3 项，实际 {rows}"
+    # 条必须真的有宽度 —— span 默认 inline，写错 display 时宽度会是 0
+    w = page.evaluate(
+        "() => document.querySelector('.traitCmp__bar').getBoundingClientRect().width"
+    )
+    assert w > 20, f"对照条宽度 {w}px，CSS 没生效"
+
+
+def test_quote_strip_on_home(server, page):
+    """首页「今天读一句」：有条目、指向某个人，且同一天不随刷新变化。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_selector("#quote-line .quote__text", timeout=5000)
+    first = page.evaluate("() => document.querySelector('#quote-line').textContent")
+    page.reload(wait_until="networkidle")
+    page.wait_for_selector("#quote-line .quote__text", timeout=5000)
+    second = page.evaluate("() => document.querySelector('#quote-line').textContent")
+    assert first.strip() == second.strip(), "同一天两次打开读到的不一样"
+
+
+def test_region_map_does_not_pretend_to_be_a_map(server, page):
+    """点阵说明里必须写明「方位是相对的」，否则它就是一张假地图。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    cap = page.evaluate(
+        "() => document.querySelector('.rmap__cap')?.textContent || ''"
+    )
+    assert "不是道路" in cap and "相对" in cap, f"点阵说明不合格: {cap!r}"
+
+
+def test_model_thumbs_exist_for_all_models(server):
+    """每个有 glb 的角色都要有一张缩略图 —— 少一张就是页面上一个破图。"""
+    import json
+
+    chars = json.loads(
+        (ROOT_FOR_TESTS / "assets/data/characters.json").read_text(encoding="utf-8")
+    )["characters"]
+    with_model = [c["id"] for c in chars if c.get("model")]
+    assert with_model, "没有任何角色配了模型"
+    missing = [
+        cid
+        for cid in with_model
+        if not (ROOT_FOR_TESTS / f"assets/img/models/{cid}.png").exists()
+    ]
+    assert not missing, f"缺缩略图: {missing}"

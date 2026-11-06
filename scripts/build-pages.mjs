@@ -18,6 +18,9 @@
  */
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
+// 图形与 accent 走同一份运行时模块，角色页的静态 SVG 和首页的运行时 SVG 必然一致
+import { glyphSvg, glyphMask } from '../assets/js/glyphs.js';
+import { accentStyle } from '../assets/js/accent.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DATA = path.join(ROOT, 'assets/data/characters.json');
@@ -28,6 +31,29 @@ const SITE = 'https://lol1.moe';
 const THEMES = ['花与四季', '星光与咒语', '茶与甜点', '书页与静默', '海风与高处', '街角的熟客', '认真做一件小事'];
 
 /* ---------- 工具 ---------- */
+
+/**
+ * 把元素图形变成 CSS mask，给插画框当水印。
+ *
+ * 用 mask 而不是再内联一份 <svg>：插画框里已经有一张 img，再加一张 SVG 就要
+ * 处理层叠与 object-fit；mask 不参与排版，也不会被读屏或复制选中。
+ * 编码用 encodeURIComponent —— 图形里只有路径指令，转义后不会破坏 CSS 语法。
+ */
+function maskStyle(element) {
+  // glyphMask 返回的已经是 url("…")，编码后的内容里没有引号，可安全放进属性
+  const data = glyphMask(element);
+  return data ? `--el-mask:${data}` : '';
+}
+
+/**
+ * body 上的内联变量：accent 三件套 + 元素遮罩。
+ * 必须 esc —— glyphMask 返回的 url("…") 用双引号，而 style="…" 也是双引号，
+ * 不转义会把属性从第一个引号处截断（实测：整条 style 作废，水印和 accent 全没了）。
+ */
+function bodyStyle(c) {
+  const mask = maskStyle(c.element);
+  return `${accentStyle(c.palette)}${mask ? `;${mask}` : ''}`;
+}
 
 /** HTML 转义，数据里可能有引号、& 这类字符 */
 function esc(s) {
@@ -210,7 +236,7 @@ function page(c, prev, next, byId) {
 ${THEME_BOOT}
   </script>
 </head>
-<body class="char-page" data-char-id="${c.id}">
+<body class="char-page" data-char-id="${c.id}" style="${esc(bodyStyle(c))}">
   <a class="skip-link" href="#main">跳到正文</a>
 
   <header class="site-header">
@@ -256,10 +282,10 @@ ${THEME_BOOT}
       </figure>
 
       <div class="char__info">
-        <p class="char__eyebrow">${esc(c.region)} · ${esc(c.element)}</p>
+        <p class="char__eyebrow">${glyphSvg(c.element, { className: 'glyph glyph--inline', size: 16 })}<span>${esc(c.region)} · ${esc(c.element)}</span></p>
         <h1 class="char__name">${esc(c.name)}</h1>
         <p class="char__en">${esc(c.nameEn)} · ${esc(c.title)}</p>
-        <p class="char__tagline">“${esc(c.tagline)}”</p>
+        <blockquote class="char__tagline"><p>${esc(c.tagline)}</p></blockquote>
         <div class="char__bio">${bioParas(c.bio)}</div>
 
         <div class="char__tags">${tags}</div>

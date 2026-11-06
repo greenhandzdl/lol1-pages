@@ -2,6 +2,8 @@
 import { collapseNav } from './nav-collapse.js';
 import { store, todayKey } from './store.js';
 import { pickOfDay, lineOfDay, suggestOfDay } from './daily.js';
+import { glyphSvg } from './glyphs.js';
+import { accentStyle } from './accent.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -102,13 +104,14 @@ function cardHTML(c, index) {
     )
     .join('');
   return `
-    <article class="card reveal" data-id="${c.id}">
+    <article class="card reveal" data-id="${c.id}" style="${accentStyle(c.palette)}">
       <button class="card__body" type="button" aria-haspopup="dialog" aria-label="查看 ${c.name} 的档案">
         <span class="card__media">
           <img src="${c.image}" srcset="${imgSrcset(c.image)}"
                sizes="(max-width: 860px) 46vw, 30vw"
                alt="插画：${c.name} · ${c.title}" width="768" height="1024" loading="lazy" decoding="async">
           <span class="card__badge">NO.${pad2(index + 1)}</span>
+          <span class="card__el" aria-hidden="true">${glyphSvg(c.element, { size: 18 })}<i>${c.element}</i></span>
           <span class="card__hint" aria-hidden="true">翻开她的档案 →</span>
         </span>
         <span class="card__info">

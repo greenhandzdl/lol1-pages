@@ -14,7 +14,56 @@
   grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
   gap: clamp(20px, 4vw, 52px);
   align-items: start;
+  /* 12 位角色页原本长得一模一样：插画一样大、标题一样颜色、正文一样黑。
+     现在每个页面铺一层她自己的色（--pa 极淡），只换颜色不换版式 —— 
+     12 个页面各有各的调子，但间距字号层级完全没动，所以还是同一个站。 */
+  position: relative;
 }
+.char__inner::before {
+  content: '';
+  position: absolute;
+  /* 横向内缩不能是负的：这层光晕是 .char__inner 的伪元素，
+     负的左右 inset 会让它比容器宽 12%，在 320px 上把文档撑出 4px ——
+     scrollWidth 变大，而翻 DOM 找不到任何溢出元素（伪元素不在 DOM 里）。 */
+  inset: -8% 0 -4% 0;
+  z-index: -1;
+  border-radius: 50%;
+  background:
+    radial-gradient(52% 46% at 12% 6%, color-mix(in srgb, var(--pa) 62%, transparent), transparent 72%),
+    radial-gradient(46% 42% at 92% 78%, color-mix(in srgb, var(--pb) 34%, transparent), transparent 74%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+[data-theme="dark"] .char__inner::before { opacity: 0.3; }
+
+/* 元素大图形：垫在档案栏右上方的一个大水印。
+   一开始放在插画框里（::before + z-index:-1），实测完全看不见 ——
+   插画本身是白底不透明的，盖上去等于没有。所以改放到 info 栏右上方，
+   那里是空白的页面底色，16% 透明度既不抢字，又让一眼看出"这是谁的元素"。
+
+   踩过的两个坑（都只会让图形静默消失，页面不报错）：
+     · mask 里的 SVG 没有 xmlns → 整张图被丢弃，只剩一个色块
+     · 内联 style 里的 url("…") 没转义 → 属性被第一个引号截断，
+       连 accent 一起失效。所以 build-pages.mjs 里 bodyStyle() 一定要 esc。 */
+.char__inner::after {
+  content: '';
+  position: absolute;
+  top: -3%;
+  /* 之前是 right:-2%，在 320px 上把文档撑宽了 4px —— 定位伪元素会算进
+     scrollWidth，而 ::after 又不是真元素，翻 DOM 找不到是谁溢出的。
+     改成贴边内缩，视觉上几乎没差，横向溢出归零。 */
+  right: 0;
+  width: clamp(120px, 16vw, 230px);
+  aspect-ratio: 1;
+  z-index: -1;
+  pointer-events: none;
+  background: currentColor;
+  color: var(--pa-ink);
+  -webkit-mask: var(--el-mask, none) center / contain no-repeat;
+  mask: var(--el-mask, none) center / contain no-repeat;
+  opacity: 0.16;
+}
+[data-theme="dark"] .char__inner::after { color: var(--pa-glow); opacity: 0.18; }
 
 /* ---------- 左：插画 ---------- */
 
@@ -24,10 +73,11 @@
   top: 96px;
   border-radius: 22px;
   overflow: hidden;
-  background: linear-gradient(160deg, var(--pink-soft), var(--surface-2));
+  background: linear-gradient(160deg, var(--pa), var(--pb));
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
   aspect-ratio: 3 / 4;
+  isolation: isolate;
 }
 
 .char__media img {
@@ -66,12 +116,24 @@
   letter-spacing: 0.04em;
 }
 
+/* 引言：Tagline 是一句她说的话，之前和正文同字号同颜色，读起来像副标题。
+   现在给它大字号、左边一条 accent 竖线，和下面的 bio 明确分层。 */
 .char__tagline {
   margin: clamp(16px, 2.4vw, 24px) 0 0;
-  font-size: clamp(1rem, 2.2vw, 1.15rem);
-  line-height: 1.7;
+  padding-left: clamp(12px, 1.6vw, 18px);
+  border-left: 3px solid var(--pb);
+  font-family: var(--font-display);
+  font-size: clamp(1.12rem, 2.5vw, 1.4rem);
+  line-height: 1.65;
   color: var(--ink);
 }
+.char__tagline p { margin: 0; }
+.char__tagline p::before { content: '“'; color: var(--pa-ink); margin-left: -0.5em; }
+.char__tagline p::after { content: '”'; color: var(--pa-ink); }
+
+/* 元素图形跟着角色 accent 走 */
+.char__eyebrow .glyph { color: var(--pa-ink); }
+[data-theme="dark"] .char__eyebrow .glyph { color: var(--pa-glow); }
 
 .char__bio {
   margin: 12px 0 0;

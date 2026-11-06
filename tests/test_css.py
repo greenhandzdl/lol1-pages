@@ -179,3 +179,76 @@ def test_stage_viewport_follows_palette(server, page):
         "() => getComputedStyle(document.querySelector('.stage__viewport')).backgroundImage"
     )
     assert first != second, "换人后视口背景没变"
+
+
+def test_nav_does_not_flicker_on_jitter_scroll(server, page):
+    """来回抖动 ±12px 时，吸顶栏的 class 不能每帧翻转。
+
+    实机反馈"navbar 一直在闪"。根因是 nav-collapse.js 原来直接
+    `toggle(className, dy > 0)`：触控板/惯性滚动会送进 ±10px 的抖动，
+    dy 符号一变 class 就翻，1440px 下 8 次来回滚出了 10101010 ——
+    也就是收起/展开动画每帧重播一次，看起来就是闪烁。
+    现在改成"同方向累积 DEPTH 像素才认一次方向变化"。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(500)
+    seq = page.evaluate("""async () => {
+      const h = document.querySelector('.site-header');
+      const out = [];
+      let y = 400;
+      window.scrollTo(0, y);
+      await new Promise(r => setTimeout(r, 400));
+      for (let i = 0; i < 10; i++) {
+        y += (i % 2 === 0 ? 12 : -12);
+        window.scrollTo(0, y);
+        await new Promise(r => setTimeout(r, 200));
+        out.push(h.classList.contains('is-collapsed') ? '1' : '0');
+      }
+      return out.join('');
+    }""")
+    assert len(set(seq)) == 1, f"抖动时吸顶栏在反复翻转: {seq}"
+
+
+def test_nav_still_collapses_on_real_scroll(server, page):
+    """修抖动不能把正常行为一起修没：真往一个方向滚，该收就得收。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(500)
+    seq = page.evaluate("""async () => {
+      const h = document.querySelector('.site-header');
+      const at = () => h.classList.contains('is-collapsed') ? '1' : '0';
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const out = [];
+      window.scrollTo(0, 0); await wait(500);
+      for (let y = 0; y <= 700; y += 70) { window.scrollTo(0, y); await wait(120); }
+      await wait(400); out.push(['下滚', at()]);
+      for (let y = 700; y >= 100; y -= 70) { window.scrollTo(0, y); await wait(120); }
+      await wait(400); out.push(['上滚', at()]);
+      window.scrollTo(0, 0); await wait(400); out.push(['顶部', at()]);
+      return out;
+    }""")
+    got = dict(seq)
+    assert got['下滚'] == '1', "一路下滚应该收起"
+    assert got['上滚'] == '0', "一路上滚应该展开"
+    assert got['顶部'] == '0', "回到顶部必须展开"
+
+
+def test_grain_does_not_replace_page_glow(server, page):
+    """颗粒必须挂在没被占用的伪元素上，不能顶掉底色光晕。
+
+    实机反馈"navbar 一直在闪"排查时发现的连带问题：批次 I 把噪点写成
+    `body::before`，和原本的底色光晕同选择器同属性，后写的赢 ——
+    三条柔和径向渐变被整条吃掉，整站变成纯色 + 噪点。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    bg = page.evaluate("""() => {
+      const s = getComputedStyle(document.body, '::before');
+      return { image: s.backgroundImage, z: s.zIndex };
+    }""")
+    assert "radial-gradient" in bg["image"], "body::before 的底色光晕被覆盖了"
+
+    grain = page.evaluate("""() => {
+      const s = getComputedStyle(document.documentElement, '::after');
+      return s.backgroundImage;
+    }""")
+    assert "svg" in grain, "颗粒层不见了"

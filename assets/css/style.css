@@ -1903,28 +1903,34 @@ body.is-locked { overflow: hidden; }
 }
 
 /* ---------- 纸张质感 ----------
- * 整站底色是纯色的，12 张 AI 插画又都很"平"，页面看着像一张 PPT。
- * 叠一层极淡的噪点（内联 SVG，约 600 字节，零请求）就有了纸的颗粒感。
  *
- * 用 ::before + z-index:-1 挂在 body 上：不参与排版、不吃点击，
- * 也不影响任何已有的层叠上下文（如果挂在 main 上，会被 .reveal 的
- * transform 建出的新层叠上下文顶到文字上面）。
- * 暗色主题用 screen 混合，否则噪点会把深色提亮成灰糊。
+ * 教训：这一条最初写成 `body::before`，把上面那条**底色光晕**整条覆盖掉了
+ * —— 同选择器 + 同属性，后写的赢。结果整站的三团柔和渐变全部消失，
+ * 只剩纯 --bg 加噪点。视觉上不容易立刻发现（背景本来就是"很淡"），
+ * 但页面确实从"有光"变成了"一块平色"，吸顶栏失去透出来的色彩层次，
+ * 滚动时那点色彩变化也没了。
+ *
+ * 所以噪点只能挂在一个**没被占用的**伪元素上，不能抢光晕的座位。
+ * body 的两个伪元素都已经被占用，这里改挂到 html 上：
+ * html::after 只负责颗粒，body::before 继续负责底色光晕。
  */
-body::before {
+html::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22180%22%20height%3D%22180%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.82%22%20numOctaves%3D%223%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20filter%3D%22url%28%23n%29%22%20opacity%3D%220.42%22%2F%3E%3C%2Fsvg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22180%22%20height%3D%22180%22%3E%3Cfilter%20id%3D%22n2%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.82%22%20numOctaves%3D%223%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20filter%3D%22url%28%23n2%29%22%20opacity%3D%220.42%22%2F%3E%3C%2Fsvg%3E");
   background-size: 180px 180px;
-  opacity: 0.5;
+  /* 0.5 太狠：multiply 在浅底上会把整页压暗约 9 个亮度级
+     （实测均值 234 → 224），纸感变成了"脏"。0.28 压暗约 3 级，
+     颗粒看得见但不影响底色。 */
+  opacity: 0.28;
   mix-blend-mode: multiply;
 }
-[data-theme="dark"] body::before {
+[data-theme="dark"] html::after {
   mix-blend-mode: screen;
-  opacity: 0.22;
+  opacity: 0.14;
 }
 
 /* ---------- 此刻（批次 K）---------- */

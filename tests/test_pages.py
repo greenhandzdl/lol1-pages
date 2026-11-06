@@ -291,3 +291,34 @@ def test_daily_suggestion(server, page):
     page.reload(wait_until="networkidle")
     page.wait_for_selector(".daily__suggest")
     assert page.inner_text(".daily__suggest") == first, "同一天刷新后建议变了"
+
+
+@pytest.mark.parametrize("width", [320, 360, 390, 414, 480])
+def test_nav_never_clips_on_narrow_screens(server, page, width):
+    """窄屏上七项导航不能有一项被切掉。
+
+    这一条不是假设的问题，是真的在线上出现过：390px 时「3D 手办台」被截成
+    "3D 手"，而 overflowX 是 0、控制台没报错 —— 因为 flex 等分把整项压到比
+    scrollWidth 还小，文字只是看不见，不产生滚动条。改成折行布局之后，
+    断言 scrollWidth <= clientWidth 仍然不够，得逐格看内容到底有没有被切。
+    """
+    page.set_viewport_size({"width": width, "height": 800})
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(200)
+    # 折叠态（滚动后）导航行高度归零，这一项本来就该为 0，不算被切
+    for state in ("top", "scrolled"):
+        if state == "scrolled":
+            page.evaluate("() => window.scrollTo(0, 1200)")
+            page.wait_for_timeout(500)
+            page.evaluate("() => window.scrollTo(0, 0)")
+            page.wait_for_timeout(500)
+        clipped = page.evaluate(
+            """() => [...document.querySelectorAll('.nav__links .nav__link')]
+              .filter(e => e.getBoundingClientRect().height > 0
+                       && e.scrollWidth > e.clientWidth + 1)
+              .map(e => e.textContent.trim())"""
+        )
+        assert clipped == [], f"{width}px {state} 时这些导航项被切掉: {clipped}"
+    assert page.evaluate(
+        "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+    ) == 0

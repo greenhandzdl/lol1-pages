@@ -1324,6 +1324,28 @@ body.is-locked { overflow: hidden; }
   }
 }
 
+@media (max-width: 500px) {
+  /* 七项等分并排在 500px 以下都嫌挤：390px 时「3D 手办台」已经被切掉，
+     414px 时也一样。不缩字号也不藏项 —— 换成允许折行、按内容定宽，
+     按屏宽自然排成一到两行。缩字号让本来就不大的中文更难读，藏项等于
+     少了入口，都不如多占一行。 */
+  .nav__links {
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 0.1rem;
+    row-gap: 0.1rem;
+    /* 折成两行后展开高度约 76px，收起动画的基准值要跟着放宽，
+       否则未收起时也会被 max-height: 44px 切断 */
+    max-height: 88px;
+  }
+  .nav__link {
+    flex: 0 1 auto;
+    padding: 0.35rem 0.45rem;
+  }
+  /* 两行导航顶到 130px 左右，锚点跳转的让位距离要一起加 */
+  .section { scroll-margin-top: 148px; }
+}
+
 @media (max-width: 560px) {
   .wrap { width: calc(100% - 28px); }
   /* 注意：这里不能再写死 .nav 高度 —— 860 断点里导航改成了两行，

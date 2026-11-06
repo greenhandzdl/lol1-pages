@@ -8,6 +8,8 @@
 /* --pb-ink 由每个页面的内联 style 按 accent.js 算出来；
    没有内联 style 的兜底（例如 noscript 直开）用回品牌色，别让它整体失效 */
 :root {
+  --pa: var(--pink-soft);
+  --pb: var(--pink-2);
   --pb-ink: var(--pink-2);
 }
 .char {

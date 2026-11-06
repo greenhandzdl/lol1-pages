@@ -135,6 +135,13 @@
 
 /* 未解锁：剪影。不是藏起来，是"还没碰过" */
 /* 真剪影：光去饱和还能认出是谁，"？？？"就自相矛盾了 */
+:root {
+  --pa: var(--pink-soft);
+  --pb: var(--pink-2);
+  --pa-ink: var(--pink-ink);
+  --pa-glow: var(--pink-ink);
+}
+
 .sh.is-locked .sh__face img {
   filter: grayscale(1) blur(7px) brightness(0.95) contrast(0.6);
   opacity: 0.5;
@@ -211,3 +218,14 @@
   color: var(--ink-3);
 }
 .shelf__foot a { color: var(--ink-2); }
+
+/* 锁定卡片：元素图形当"锁" —— 图形说明"还没见过这个人"，
+   比一个问号信息量大（至少知道她是什么属性）。 */
+.sh.is-locked .sh__q {
+  color: var(--pa-glow);
+  opacity: 0.85;
+  display: grid;
+  place-items: center;
+}
+.sh.is-locked .sh__q .glyph { width: 26px; height: 26px; }
+.sh__title { min-height: 1.2em; }

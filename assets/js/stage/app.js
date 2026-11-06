@@ -5,6 +5,7 @@
  * 无 WebGL / 省流量 / 加载失败 → 自动切图片模式，不白屏。
  */
 import { Viewer, siteURL } from './viewer.js';
+import { accentVars } from '../accent.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -36,7 +37,25 @@ function initTheme() {
 }
 
 /* ---------- 面板渲染 ---------- */
+/**
+ * 把当前角色的 accent 变量挂到 .page-stage 上。
+ *
+ * 之前视口背景是固定的粉色渐变，12 个人在台子上是同一个房间；
+ * 现在背景、地台光晕、侧栏强调色都跟着 palette 走。
+ * transition 放在 CSS 里（viewport/侧栏都写了 transition），
+ * 换人时颜色平滑过渡而不是硬切。
+ */
+function paintAccent(ch) {
+  const root = $('.page-stage');
+  if (!root || !ch.palette) return;
+  const vars = accentVars(ch.palette);
+  root.style.setProperty('--pa', vars['--pa']);
+  root.style.setProperty('--pb', vars['--pb']);
+  root.style.setProperty('--pa-ink', vars['--pa-ink']);
+}
+
 function paintPanel(ch, hasModel) {
+  paintAccent(ch);
   $('#stage-region').textContent = `${ch.region} · ${ch.element}`;
   $('#stage-name').textContent = ch.name;
   $('#stage-title').textContent = `${ch.nameEn} · ${ch.title}`;

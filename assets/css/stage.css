@@ -3,6 +3,12 @@
    复用 style.css 的设计 token（颜色/圆角/字体），只补 3D 页需要的部分
    ========================================================= */
 
+:root {
+  --pa: var(--pink-soft);
+  --pb: var(--pink-2);
+  --pa-ink: var(--pink-ink);
+}
+
 .page-stage {
   min-height: 100dvh;
   background:
@@ -188,7 +194,9 @@
   font-size: 0.76rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  /* 元素那一行用她的 accent —— 之前是灰的，和侧栏其他行一样 */
+  color: var(--pa-ink);
+  transition: color 0.4s var(--ease);
 }
 .stage__name {
   margin: 0 0 4px;
@@ -204,9 +212,13 @@
 }
 .stage__tagline {
   margin: 0 0 16px;
+  padding-left: 12px;
+  border-left: 3px solid var(--pb);
   font-size: 0.98rem;
   line-height: 1.6;
   color: var(--ink-2);
+  /* 换人时竖线颜色跟着 palette 过渡 */
+  transition: border-color 0.4s var(--ease);
 }
 .stage__meta {
   display: grid;
@@ -355,3 +367,23 @@
     transition: none;
   }
 }
+
+/* ---------- 当前角色的 accent（批次 M） ---------- */
+
+/* 视口背景跟着 palette 走：换人时颜色平滑过渡，而不是硬切一刀。
+   地台光晕（::after）和侧栏强调色也一起换 —— 之前 12 个人在台子上
+   是同一个房间，只有模型颜色不同。 */
+.stage__viewport {
+  transition: background 0.4s var(--ease), border-color 0.4s var(--ease);
+  border-color: color-mix(in srgb, var(--pb) 40%, var(--line));
+  background:
+    radial-gradient(70% 60% at 50% 88%, color-mix(in srgb, var(--pb) 42%, transparent), transparent 70%),
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--pa) 70%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--surface), var(--surface-2));
+}
+
+
+/* 侧栏里的强调色跟着角色走：元素/地域那两行的 dd、引言竖线、标签分隔 */
+.stage__side dd { color: var(--pa-ink); transition: color 0.4s var(--ease); }
+.stage__tagline { border-left: 3px solid var(--pb); padding-left: 12px; transition: border-color 0.4s var(--ease); }
+.stage__tagline { border-left: 3px solid var(--pb); }

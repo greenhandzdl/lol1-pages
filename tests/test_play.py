@@ -174,3 +174,25 @@ def test_mode_switch_updates_header(server, page):
     match_title = page.text_content("#play-title")
     assert quiz_title != match_title, f"页头没变，还是 {quiz_title}"
     assert "地名" in page.text_content("#play-desc") or "六个" in page.text_content("#play-desc")
+
+
+def test_shelf_locked_cards_use_palette(server, page):
+    """锁定卡片也得带自己的 palette —— 空态不该是一片灰。
+
+    灰掉的卡片传达的是"没加载出来"或"被禁用"，
+    和"还没解锁"是两回事；12 张灰卡会让人以为坏了。
+    """
+    page.goto(BASE + "/shelf/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    locked = page.locator(".sh.is-locked")
+    assert locked.count() >= 1, "锁定卡片应该至少有一张（空存档时全部锁定）"
+    styles = locked.first.get_attribute("style") or ""
+    assert "--pa:" in styles and "--pb:" in styles, f"锁定卡片没有 palette: {styles}"
+
+
+def test_shelf_locked_cards_have_element_glyph(server, page):
+    """锁的显示用元素图形，不是问号 —— 图形至少说明了属性。"""
+    page.goto(BASE + "/shelf/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    glyphs = page.locator(".sh.is-locked .sh__q .glyph")
+    assert glyphs.count() >= 1, "锁定卡片上没有图形"

@@ -7,6 +7,8 @@
  * 全部读本地存档，不发任何请求。
  */
 import { store } from './store.js';
+import { accentVars, glowFor } from './accent.js';
+import { glyphSvg } from './glyphs.js';
 import { initTheme } from './theme.js';
 
 const state = { all: [], tab: 'all' };
@@ -140,14 +142,19 @@ function renderGrid() {
         s.turned ? '<span class="mk mk--turn" title="转过手办">转</span>' : '',
         s.star ? `<span class="mk mk--star" title="寻星最高 ${s.best}s">✦${s.best}s</span>` : '',
       ].join('');
-      return `<a class="sh ${locked ? 'is-locked' : ''}" href="/c/${c.id}/"
-                style="--pa:${c.palette[0]};--pb:${c.palette[1]}">
+      // 锁定的卡片也用她的 palette：空态不该是一片灰，
+      // 灰掉的卡片和"还没解锁"是两回事
+      const vars = locked
+        ? { ...accentVars(c.palette), '--pa-glow': glowFor(c.palette[0], c.palette[1]) }
+        : accentVars(c.palette);
+      const style = Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(';');
+      return `<a class="sh ${locked ? 'is-locked' : ''}" href="/c/${c.id}/" style="${style}">
         <span class="sh__face">
           <img src="${locked ? `${stem}-400.webp` : full}"
                srcset="${stem}-400.webp 400w, ${stem}-600.webp 600w, ${full} 768w"
                sizes="(max-width: 520px) 42vw, 160px" width="768" height="1024"
                loading="lazy" decoding="async" alt="${locked ? '' : `插画：${c.name}`}">
-          ${locked ? '<span class="sh__q" aria-hidden="true">?</span>' : ''}
+          ${locked ? `<span class="sh__q" aria-hidden="true">${glyphSvg(c.element, { size: 26 })}</span>` : ''}
         </span>
         <span class="sh__name">${locked ? '？？？' : c.name}</span>
         <span class="sh__title">${locked ? '还没碰过' : c.title}</span>

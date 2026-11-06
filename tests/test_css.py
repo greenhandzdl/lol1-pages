@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import ROOT
+from conftest import BASE, ROOT
 
 CSS_DIR = ROOT / "assets" / "css"
 CSS_FILES = sorted(CSS_DIR.glob("*.css"))
@@ -164,3 +164,18 @@ def test_contrast_on_surface():
     for name in ("--ink-2", "--ink-3", "--pink-ink"):
         ratio = _contrast(v[name], v["--surface-2"])
         assert ratio >= 4.5, f"light {name} 对 --surface-2 只有 {ratio:.2f}:1"
+
+
+def test_stage_viewport_follows_palette(server, page):
+    """3D 台换人时，视口背景必须跟着 palette 走（之前是固定粉色渐变）。"""
+    page.goto(BASE + "/3d/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    first = page.evaluate(
+        "() => getComputedStyle(document.querySelector('.stage__viewport')).backgroundImage"
+    )
+    page.click("#next-btn")
+    page.wait_for_timeout(600)
+    second = page.evaluate(
+        "() => getComputedStyle(document.querySelector('.stage__viewport')).backgroundImage"
+    )
+    assert first != second, "换人后视口背景没变"

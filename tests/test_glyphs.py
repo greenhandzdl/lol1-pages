@@ -160,3 +160,42 @@ def test_mask_svg_has_namespace():
     # 描边不能是 currentColor：mask 图里取不到继承色，会变成 none，图形直接消失
     assert "currentColor" not in mask
     assert 'stroke="#000"' in mask
+
+
+def test_accent_is_readable_on_its_own_palette():
+    """accent 不能只在页面底色上达标 —— 它还要压在卡片自己的浅色渐变上。
+
+    实测踩过的真缺陷：地域格子先用 palette 铺底、再把 --pa-ink 写上去。
+    派生时只校验了对 --bg 的对比度（4.6:1），没校验对 palette 本身，
+    结果最差一组只有 2.17:1（书织的 #b8a894 上压 #7a6c68）——
+    深色主题下整片地名糊掉，浅色主题下也发灰。现在派生时把两个端点
+    都当"底下压着什么"传进去。
+    """
+    res = _node("""
+      Promise.all([import('./assets/js/accent.js'), import('node:fs')]).then(([A, fs]) => {
+        const cs = JSON.parse(fs.readFileSync('assets/data/characters.json', 'utf8')).characters;
+        console.log(JSON.stringify(cs.map(c => {
+          const v = A.accentVars(c.palette);
+          return { id: c.id, ink: v['--pa-ink'],
+                   pa: A.contrast(v['--pa-ink'], c.palette[0]),
+                   pb: A.contrast(v['--pa-ink'], c.palette[1]) };
+        })));
+      });
+    """)
+    weak = [r for r in res if r["pa"] < 3.3 or r["pb"] < 3.3]
+    assert weak == [], f"accent 压在自己 palette 上对比度不足: {weak}"
+
+
+def test_region_text_uses_ink_not_glow():
+    """暗色主题下地域格子仍是浅底，文字必须继续用深色 --pa-ink。
+
+    这里错的是"想当然"：暗色主题 → 文字应该用提亮版。可是地域卡片
+    的底是 palette（浅色），提亮版压上去等于米白字压浅粉底。
+    卡片是"浅色小岛浮在暗色页面上"，岛上就得用岛上的字色。
+    """
+    css = (ROOT / "assets/css/style.css").read_text(encoding="utf-8")
+    block = css[css.index(".region__name {"):css.index(".region__el {")]
+    dark = [ln for ln in block.splitlines() if 'data-theme="dark"' in ln]
+    assert dark, "找不到暗色主题下 .region__name 的规则"
+    for ln in dark:
+        assert "--pa-glow" not in ln, f"暗色主题下地域文字用了提亮色（会糊）: {ln.strip()}"

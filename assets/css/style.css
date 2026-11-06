@@ -1436,7 +1436,7 @@ body.is-locked { overflow: hidden; }
   transition: opacity 0.2s ease, transform 0.3s var(--ease);
 }
 .region__glyph .glyph { width: 46px; height: 46px; }
-[data-theme="dark"] .region__glyph { color: var(--pa-glow); opacity: 0.5; }
+[data-theme="dark"] .region__glyph { color: var(--pa-ink); opacity: 0.5; }
 .region:hover .region__glyph,
 .region:focus-visible .region__glyph { opacity: 0.72; transform: rotate(-6deg) scale(1.06); }
 
@@ -1457,13 +1457,17 @@ body.is-locked { overflow: hidden; }
      写死一个颜色在某几种底色上会糊 */
   color: var(--pa-ink);
 }
-[data-theme="dark"] .region__name { color: var(--pa-glow); }
+/* 暗色主题：地域卡片的底还是**浅色**（palette 本来就是浅的），
+   所以文字必须继续用深色 —— 用 --pa-glow（提亮版）压上去等于
+   米白字压浅粉底，对比度 ~1.6:1，实测整片糊掉。
+   卡片是"浅色小岛浮在暗色页面上"，岛上就得用岛上的字色。 */
+[data-theme="dark"] .region__name { color: var(--pa-ink); }
 .region__who {
   font-size: 0.82rem;
   color: var(--pa-ink);
   opacity: 0.82;
 }
-[data-theme="dark"] .region__who { color: var(--pa-glow); }
+[data-theme="dark"] .region__who { color: var(--pa-ink); }
 .region__el {
   justify-self: start;
   margin-top: 8px;
@@ -1475,7 +1479,10 @@ body.is-locked { overflow: hidden; }
   letter-spacing: 0.08em;
   color: var(--pa-ink);
 }
-[data-theme="dark"] .region__el { background: color-mix(in srgb, #000000 26%, transparent); color: var(--pa-glow); }
+[data-theme="dark"] .region__el {
+  background: color-mix(in srgb, #000000 22%, transparent);
+  color: var(--pa-ink);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .region { transition: none; }

@@ -64,7 +64,7 @@ export function mix(a, b, t) {
  * @param {number} opts.hueBias  往 deep 借多少比重（0–1），让 12 个人各有各的色相
  * @returns {string} #rrggbb
  */
-export function inkFor(light, deep, { bg = '#fff8f4', ratio = 4.6, hueBias = 0.62 } = {}) {
+export function inkFor(light, deep, { bg = '#fff8f4', ratio = 4.6, hueBias = 0.62, alsoOn = [] } = {}) {
   const seed = mix(light, deep || light, hueBias);
   // 直接往墨色压会 12 个人最后都糊成同一个深灰（实测压到 4.5:1 时，
   // 樱井小春和花音的差值是 3/255，肉眼看就是同一个颜色）。
@@ -73,7 +73,12 @@ export function inkFor(light, deep, { bg = '#fff8f4', ratio = 4.6, hueBias = 0.6
   for (let t = 0; t <= 1.0001; t += 0.02) {
     const c = mix(seed, '#2b1b23', t);
     best = c;
-    if (contrast(c, bg) >= ratio) return c;
+    // 达标底不止页面底色：文字也会压在卡片自己的渐变色上（地域格子、
+    // 角色页的引言竖线旁的浅色块）。只对 --bg 达标是不够的 ——
+    // 实测最差的一组只有 2.17:1，肉眼就是"字没了"。
+    if (contrast(c, bg) < ratio) continue;
+    if (alsoOn.some((b) => contrast(c, b) < 3.4)) continue;
+    return c;
   }
   return best;
 }
@@ -92,8 +97,9 @@ export function accentVars(palette, opts) {
     '--pa': a,
     '--pb': b,
     // 深色主题不要这个深色 accent（对 #1c1420 只有 3.6:1），
-    // 所以额外给一个"提亮版"，深色主题的 CSS 直接用它
-    '--pa-ink': inkFor(a, b, opts),
+    // 所以额外给一个"提亮版"，深色主题的 CSS 直接用它。
+    // 两个 palette 端点都当"底下压着什么"传进去 —— 卡片本身就是这么铺的。
+    '--pa-ink': inkFor(a, b, { ...opts, alsoOn: [a, b] }),
     '--pa-glow': glowFor(a, b),
   };
 }

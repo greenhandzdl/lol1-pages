@@ -32,6 +32,7 @@
   <script>
     (function () {
       try {
+        document.documentElement.classList.add('js');
         var s = localStorage.getItem('lol1:theme');
         var d = window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');

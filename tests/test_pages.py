@@ -367,3 +367,33 @@ def test_web_edge_kinds_are_whitelisted(server, page):
     assert missing == [], f"有连线缺 data-kind: {missing}"
     # 6 种关系应该是 6 个不同颜色（灰也允许，但不能全部相同）
     assert len(set(colors.values())) >= 5, f"关系种类没有分色，实际只有 {len(set(colors.values()))} 种颜色"
+
+
+def test_content_visible_without_javascript(server, browser):
+    """关掉 JS，页面内容必须可见 —— reveal 不能把整页藏起来。
+
+    实测踩过的真缺陷：`.reveal { opacity: 0 }` 靠 JS 加 `.is-in` 才显示，
+    关掉 JS 后首屏 hero 以下全是空白，连 `<noscript>` 里的兜底内容
+    （它自己也在 .reveal 里）一起被藏。现在改成渐进增强：
+    只有 <html class="js"> 时才隐藏。
+    """
+    ctx = browser.new_context(viewport=VIEWPORTS["1440"], java_script_enabled=False)
+    page = ctx.new_page()
+    page.goto(BASE + "/", wait_until="load")
+    page.wait_for_timeout(300)
+
+    opacities = page.evaluate(
+        "() => [...document.querySelectorAll('.reveal')].map(e => getComputedStyle(e).opacity)"
+    )
+    hidden = [o for o in opacities if o == "0"]
+    assert hidden == [], f"关 JS 后还有 {len(hidden)} 个 .reveal 停在 opacity:0"
+
+    # noscript 兜底卡片也得看得见
+    cards = page.evaluate(
+        """() => {
+          const ns = [...document.querySelectorAll('noscript')];
+          return ns.length;
+        }"""
+    )
+    assert cards >= 1, "首页应该有 noscript 兜底"
+    ctx.close()

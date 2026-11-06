@@ -38,6 +38,11 @@
   }
   </script>
   <script>
+    // 有 JS 才给 <html> 加 .js —— reveal 的进场动画靠它开闸。
+    // 关掉 JS 时不会有这个 class，内容就是普通可见的静态页。
+    document.documentElement.classList.add('js');
+  </script>
+  <script>
     // Apply the saved theme before first paint to avoid a flash.
     (function () {
       try {

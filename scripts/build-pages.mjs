@@ -68,6 +68,7 @@ function esc(s) {
 /** 首屏前应用主题，避免闪白（与首页同款） */
 const THEME_BOOT = `    (function () {
       try {
+        document.documentElement.classList.add('js');
         var s = localStorage.getItem('lol1:theme');
         var d = window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');

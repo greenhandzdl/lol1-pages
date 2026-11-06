@@ -30,6 +30,7 @@
   <script>
     // 首帧前应用主题，避免闪白（与首页同款）
     try {
+      document.documentElement.classList.add('js');
       const s = localStorage.getItem('lol1:theme');
       const d = matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');

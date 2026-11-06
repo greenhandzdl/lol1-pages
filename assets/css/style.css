@@ -1203,12 +1203,20 @@ body.is-locked { overflow: hidden; }
 
 /* ---------- reveal ---------- */
 
-.reveal {
+/*
+ * reveal 默认**可见**，只有确认 JS 在跑（<html class="js">）才隐藏。
+ *
+ * 之前是反过来的：.reveal { opacity: 0 }，靠 JS 加 .is-in 才显示。
+ * 关掉 JS 时整页停在 opacity:0 —— 首屏 hero 下面全空，noscript 里的
+ * 兜底内容也跟着被藏（fallback 内容本身也在 .reveal 里）。
+ * 现在改成渐进增强：没有 JS 就老老实实显示，有 JS 才做进场动画。
+ */
+.js .reveal {
   opacity: 0;
   transform: translateY(22px);
   transition: opacity 0.85s var(--ease), transform 0.85s var(--ease);
 }
-.reveal.is-in { opacity: 1; transform: none; }
+.js .reveal.is-in { opacity: 1; transform: none; }
 
 /* ---------- 404 ---------- */
 
@@ -1383,7 +1391,7 @@ body.is-locked { overflow: hidden; }
     transition-duration: 0.01ms !important;
   }
   .ticker__track { animation: none; }
-  .reveal { opacity: 1; transform: none; }
+  .js .reveal { opacity: 1; transform: none; }
 }
 
 .select {

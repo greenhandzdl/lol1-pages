@@ -1911,3 +1911,104 @@ body::before {
   mix-blend-mode: screen;
   opacity: 0.22;
 }
+
+/* ---------- 此刻（批次 K）---------- */
+
+/*
+ * 四档时段切换 + 当天此刻在做的事。
+ * 数据只有 characters.json 里的 day[]（每人四条），所以这里不新造内容，
+ * 只是把"她的一天"按读者自己的本地时间翻到那一档。
+ * 区块本身约 320px：首页已经很高了，这里必须紧凑，不能再长。
+ */
+.now__switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  justify-self: start;
+}
+.now__btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.84rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.now__btn:hover { color: var(--ink); }
+.now__btn[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(120, 70, 95, 0.18);
+}
+.now__btn .now__btn-hint {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.now__btn[aria-pressed="true"] .now__btn-hint { color: var(--pink-ink); }
+
+.now__card {
+  margin-top: clamp(16px, 3vw, 28px);
+  display: grid;
+  gap: clamp(18px, 3vw, 36px);
+  align-items: center;
+  max-width: 880px;
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--pb) 34%, var(--line));
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--pa) 66%, transparent), transparent 62%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+@media (min-width: 720px) {
+  .now__card { grid-template-columns: auto 1fr; }
+}
+
+.now__face {
+  width: clamp(96px, 14vw, 132px);
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--pa), var(--pb));
+  border: 1px solid var(--line);
+}
+.now__face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.now__time {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--pa-ink);
+}
+[data-theme="dark"] .now__time { color: var(--pa-glow); }
+.now__text {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.4vw, 1.32rem);
+  line-height: 1.7;
+  color: var(--ink);
+}
+.now__meta {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+.now__meta a { color: var(--pa-ink); text-decoration: none; }
+.now__meta a:hover { text-decoration: underline; }
+[data-theme="dark"] .now__meta a { color: var(--pa-glow); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .now__card { transition: opacity 0.2s ease; }
+  .now__card.is-switching { opacity: 0.35; }
+}

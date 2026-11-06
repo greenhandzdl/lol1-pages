@@ -23,7 +23,7 @@ const fail = (m) => errors.push(m);
 const warn = (m) => warns.push(m);
 
 /** 这些字段是玩法与页面结构依赖的，必须有 */
-const REQUIRED = ['id', 'name', 'nameEn', 'title', 'tagline', 'bio', 'story', 'day', 'region', 'element', 'tags', 'themes', 'image', 'palette', 'seed'];
+const REQUIRED = ['id', 'name', 'nameEn', 'title', 'tagline', 'voice', 'bio', 'story', 'day', 'region', 'element', 'tags', 'themes', 'image', 'palette', 'seed'];
 /** 「她的一天」四个时段，顺序固定 —— 少了或多了都会让时间线读起来怪 */
 const DAY_SLOTS = ['早晨', '白天', '傍晚', '夜里'];
 /** 关系类型白名单 —— 新增要同时改这里，避免拼写漂移 */

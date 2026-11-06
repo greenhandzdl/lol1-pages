@@ -218,6 +218,95 @@ function renderProgress() {
  * 用日期做确定性种子：同一天任何人进来看到的都是同一位，跨天才换。
  * 抽到谁不落库（可以重复看），只把"今天抽过"记进存档，用于完成度统计。
  */
+/**
+ * 此刻 —— 把角色页的"她的一天"按读者本地时间翻到对应那一档。
+ *
+ * 为什么按本地时间而不是站点时间：这里没有后端，也没有时区表，
+ * 而"她在做什么"这件事本来就取决于读者什么时候打开。
+ * 四个时段和 day[].time 一一对应（早晨/白天/傍晚/夜里）。
+ */
+const NOW_SLOTS = [
+  { key: 'morning', label: '早晨', hours: [5, 11] },
+  { key: 'day', label: '白天', hours: [11, 17] },
+  { key: 'evening', label: '傍晚', hours: [17, 21] },
+  { key: 'night', label: '夜里', hours: [21, 5] },
+];
+
+function slotOf(date) {
+  const h = date.getHours();
+  if (h >= 5 && h < 11) return 'morning';
+  if (h >= 11 && h < 17) return 'day';
+  if (h >= 17 && h < 21) return 'evening';
+  return 'night';
+}
+
+function renderNow() {
+  const sw = $('#now-switch');
+  const host = $('#now-card');
+  if (!sw || !host) return;
+
+  const initial = slotOf(new Date());
+  sw.innerHTML = NOW_SLOTS.map(
+    (s) =>
+      `<button class="now__btn" type="button" data-slot="${s.key}" aria-pressed="false">${s.label}<span class="now__btn-hint">${s.hours[0]}–${s.hours[1]}</span></button>`,
+  ).join('');
+
+  let current = null;
+  let timer = 0;
+
+  const show = (slot, animate = true) => {
+    current = slot;
+    sw.querySelectorAll('.now__btn').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.slot === slot));
+    });
+
+    const paint = () => {
+      const item = pickOfDay(state.all, `${todayKey()}::${slot}`);
+      if (!item) { host.innerHTML = ''; return; }
+      const entry = (item.day || []).find((d) => String(d.time).includes(NOW_SLOTS.find((s) => s.key === slot).label))
+        || item.day?.[NOW_SLOTS.findIndex((s) => s.key === slot)];
+
+      const stem = item.image.replace(/\.webp$/, '');
+      host.innerHTML = entry
+        ? `<div class="now__face"><img src="${item.image}"
+               srcset="${stem}-400.webp 400w, ${stem}-600.webp 600w, ${item.image} 768w"
+               sizes="132px" width="768" height="1024" loading="lazy" decoding="async"
+               alt="${item.name}"></div>
+           <div>
+             <p class="now__time">${NOW_SLOTS.find((s) => s.key === slot).label} · ${entry.title}</p>
+             <p class="now__text">“${entry.text}”</p>
+             <p class="now__meta">${item.name} · ${item.title} · ${item.region} · ${item.element}
+               <a href="/c/${item.id}/" aria-label="看 ${item.name} 的档案">她的档案 →</a></p>
+           </div>`
+        : '';
+    };
+
+    if (!animate || reducedMotion) { paint(); return; }
+    host.classList.add('is-switching');
+    clearTimeout(timer);
+    timer = setTimeout(() => { paint(); host.classList.remove('is-switching'); }, 180);
+  };
+
+  sw.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.now__btn');
+    if (btn && btn.dataset.slot !== current) show(btn.dataset.slot);
+  });
+  sw.addEventListener('keydown', (ev) => {
+    const btns = [...sw.querySelectorAll('.now__btn')];
+    const i = btns.indexOf(document.activeElement);
+    if (i < 0) return;
+    let n = null;
+    if (ev.key === 'ArrowRight') n = (i + 1) % btns.length;
+    if (ev.key === 'ArrowLeft') n = (i - 1 + btns.length) % btns.length;
+    if (n === null) return;
+    ev.preventDefault();
+    btns[n].focus();
+    show(btns[n].dataset.slot);
+  });
+
+  show(initial, false);
+}
+
 function renderDaily() {
   const host = $('#daily-body');
   if (!host) return;
@@ -873,6 +962,7 @@ async function init() {
   renderRegions();
   renderProgress();
   renderDaily();
+  renderNow();
   renderWeb();
   updateFavToggle();
   $('#sort').value = state.sort;

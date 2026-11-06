@@ -267,3 +267,45 @@ def test_day_slot_titles_reasonably_unique(chars):
         titles = [c["day"][slot_i]["title"] for c in chars]
         dup = [t for t in set(titles) if titles.count(t) > 1]
         assert not dup, f"「{slot}」时段标题重复: {dup}"
+
+
+
+
+# ---------- voice（第一人称台词） ----------
+
+def test_voice_exists_for_everyone(chars):
+    """没有 voice 的角色，页面上就少一整块「她说过的话」。"""
+    missing = [c["id"] for c in chars if not c.get("voice")]
+    assert missing == [], f"这些角色没有 voice: {missing}"
+
+
+def test_voice_is_first_person_and_distinct(chars):
+    """voice 必须是三条、且不能和 tagline 撞。
+
+    三条不是风格偏好，是结构上的区别：bio/story 是别人转述，
+    voice 得是她自己说。太长会撑爆区块高度。
+    """
+    for c in chars:
+        v = c.get("voice") or []
+        assert len(v) == 3, f"{c['id']} 的 voice 有 {len(v)} 条，应该是 3"
+        for line in v:
+            assert 6 < len(line) <= 40, f"{c['id']} 的台词长度 {len(line)} 超出 6–40"
+            assert line.strip() != c["tagline"].strip(), f"{c['id']} 的 voice 和 tagline 一模一样"
+
+
+def test_voice_lines_are_unique_within_character(chars):
+    """同一角色内的重复台词，多半是复制粘贴时没改干净。"""
+    for c in chars:
+        v = c.get("voice") or []
+        assert len(set(v)) == len(v), f"{c['id']} 的 voice 里有重复台词"
+
+
+def test_check_data_accepts_voice_field():
+    """构建期的校验器必须认识 voice —— 新字段不进 REQUIRED，拼错也不会被发现。
+
+    实测踩过：voice 加进数据后，check-data 一路绿灯，
+    因为 REQUIRED 里没有它，字段拼错（voic / Voice）也不会报错。
+    """
+    src = (ROOT / "scripts/check-data.mjs").read_text(encoding="utf-8")
+    required = src[src.index("const REQUIRED = ["):src.index("];", src.index("const REQUIRED = ["))]
+    assert "'voice'" in required, "REQUIRED 里没有 voice：拼错的字段名不会被发现"

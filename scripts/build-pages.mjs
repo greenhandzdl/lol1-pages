@@ -125,6 +125,19 @@ function dayBlock(c) {
     </section>`;
 }
 
+/** 她的原话（voice）：第一人称，和 bio/story 的第三人称区分开 */
+function voiceBlock(c) {
+  if (!Array.isArray(c.voice) || !c.voice.length) return '';
+  const lis = c.voice.map((v) => `          <li>${esc(v)}</li>`).join('\n');
+  return `    <section class="char__block" aria-labelledby="voice-title" id="voice">
+      <h2 class="char__blockTitle" id="voice-title">她说过的话</h2>
+      <ul class="quotes">
+${lis}
+      </ul>
+    </section>
+`;
+}
+
 /** 喜欢与不喜欢：两组小卡片 */
 function likesBlock(c) {
   const has = (c.likes && c.likes.length) || (c.dislikes && c.dislikes.length);
@@ -298,6 +311,7 @@ ${THEME_BOOT}
         </dl>
 
         ${dayBlock(c)}
+        ${voiceBlock(c)}
         ${storyBlock(c)}
         ${likesBlock(c)}
         ${relationsBlock(c, byId)}

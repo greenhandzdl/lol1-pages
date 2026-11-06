@@ -10,7 +10,14 @@ import sys
 
 import pytest
 
-from conftest import ROOT
+from conftest import BASE, ROOT
+
+CHARS = json.loads((ROOT / "assets/data/characters.json").read_text(encoding="utf-8"))["characters"]
+
+
+def _overflow(page) -> int:
+    return page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
+
 
 NODE_SCRIPT = r"""
 const q = require('./assets/data/quiz.json');
@@ -91,3 +98,41 @@ def test_python_matches_node(chars, node_result):
             mismatched.append(f"{cid}: py={py_top3} js={info['top3']}")
 
     assert not mismatched, "两边算法不一致:\n" + "\n".join(mismatched)
+
+
+
+
+def test_now_slots_cover_day_times(server, page):
+    """「此刻」的四个时段必须能覆盖 day[] 里的全部 time 值，否则有档位是空的。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    slots = page.evaluate(
+        "() => [...document.querySelectorAll('.now__btn')].map(b => b.dataset.slot)"
+    )
+    assert slots == ["morning", "day", "evening", "night"], slots
+
+    # 这里用 Python 数一遍：数据是 12 位 × 4 档，任何一位缺档都会让某一档是空的
+    missing = [c["id"] for c in CHARS if len(c.get("day", [])) != 4]
+    assert missing == [], f"这些角色的 day 不是 4 档: {missing}"
+
+
+def test_now_section_never_adds_horizontal_overflow(server, page):
+    """区块必须紧凑：320px 上不能把文档撑宽（首页已经很高了）。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    page.evaluate("() => document.getElementById('now').scrollIntoView({block: 'start'})")
+    page.wait_for_timeout(300)
+    assert _overflow(page) == 0, f"#now 区块在 320px 上横向溢出 {_overflow(page)}px"
+
+
+def test_now_switch_changes_content(server, page):
+    """点不同时段，内容要真的变（不是只换标签）。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    first = page.locator("#now-card .now__text").text_content()
+    page.click('.now__btn[data-slot="night"]')
+    page.wait_for_timeout(400)
+    second = page.locator("#now-card .now__text").text_content()
+    assert first != second, "切换时段后文案没变"
+    assert page.locator('.now__btn[data-slot="night"]').get_attribute("aria-pressed") == "true"
+    assert page.locator('.now__btn[data-slot="day"]').get_attribute("aria-pressed") == "false"

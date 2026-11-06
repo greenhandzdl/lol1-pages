@@ -5,6 +5,11 @@
  * 独立成文件是为了不让首页的 style.css 继续膨胀。
  */
 
+/* --pb-ink 由每个页面的内联 style 按 accent.js 算出来；
+   没有内联 style 的兜底（例如 noscript 直开）用回品牌色，别让它整体失效 */
+:root {
+  --pb-ink: var(--pink-2);
+}
 .char {
   padding: clamp(20px, 4vw, 48px) 0 clamp(30px, 6vw, 64px);
 }
@@ -452,9 +457,14 @@ a.tag--theme {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--pink);
+  /* 圆点用她自己的 accent —— 之前整条时间线都是同一个粉色，
+     12 个角色的"一天"长得一模一样，点只有装饰作用没有辨识度 */
+  background: var(--pb-ink, var(--ink));
   box-shadow: 0 0 0 3px var(--bg);
 }
+[data-theme="dark"] .day__item::after { background: var(--pa-glow); }
+.day__item:first-child .day__time,
+.day__item:first-child .day__title { color: var(--ink); }
 
 .day__time {
   font-size: 0.76rem;
@@ -489,3 +499,22 @@ a.tag--theme {
   line-height: 1;
   color: var(--ink);
 }
+
+/* ---------- 她说过的话（voice，批次 K） ---------- */
+
+/*
+ * 每段是她的原话，不是别人转述。
+ * 之前 bio/story 全是第三人称，"神社里最小的一位巫女……"，
+ * 12 个角色共用同一个作者声音，看不出是谁在说话。voice 补回第一人称。
+ * 每条前面用她的 accent 竖线，和 tagline 呼应但不重复。
+ */
+.quotes { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.quotes li {
+  position: relative;
+  padding: 2px 0 2px 18px;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--ink);
+  border-left: 2px solid var(--pb);
+}
+[data-theme="dark"] .quotes li { border-left-color: var(--pa-glow); }

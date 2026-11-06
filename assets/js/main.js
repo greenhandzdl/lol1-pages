@@ -152,15 +152,15 @@ function renderRegions() {
   const host = $('#regions-grid');
   if (!host) return;
   host.innerHTML = state.all
-    .map((c) => {
-      const [a, b] = c.palette || ['#ffd9e6', '#ffb7d5'];
-      return `<button class="region" type="button" data-id="${c.id}"
-                style="--ra:${a};--rb:${b}">
+    .map(
+      (c) => `<button class="region" type="button" data-id="${c.id}"
+                style="${accentStyle(c.palette)}">
+          <span class="region__glyph" aria-hidden="true">${glyphSvg(c.element, { size: 40 })}</span>
           <span class="region__name">${c.region}</span>
           <span class="region__who">${c.name}</span>
           <span class="region__el">${c.element}</span>
-        </button>`;
-    })
+        </button>`,
+    )
     .join('');
 
   $$('#regions-grid .region').forEach((btn) => {
@@ -291,7 +291,7 @@ function renderWeb() {
     .map((e) => {
       const A = pos.get(e.a), B = pos.get(e.b);
       return `<line class="web__edge" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"
-                data-a="${e.a}" data-b="${e.b}" />`;
+                data-a="${e.a}" data-b="${e.b}" data-kind="${e.kind}" />`;
     })
     .join('');
 
@@ -302,9 +302,26 @@ function renderWeb() {
       return `<g class="web__node" data-id="${id}" role="button" tabindex="0"
                  aria-expanded="false" aria-label="${p.c.name}，${n} 段关系">
         <circle cx="${p.x}" cy="${p.y}" r="3.4" fill="${c2}" />
+        <g class="web__glyph" transform="translate(${p.x} ${p.y})">
+          <g transform="translate(-2.1 -2.1) scale(0.175)">${glyphSvg(p.c.element, { size: 24, strokeWidth: 2.4 })}</g>
+        </g>
         <text x="${p.x}" y="${p.y - 5.6}" text-anchor="middle">${p.c.name}</text>
       </g>`;
     })
+    .join('');
+
+  // 图例：颜色 + 线型 + 名字 + 条数，全部从 edges 数出来，不手写。
+  // 数的是"画在图上的线"，不是 directed 关系条数 —— 同一条关系两边都记了一次，
+  // 用 38 就得到图例 6/8/6/6/2/10，加起来是 38，而图上只有 19 根线。
+  const byKind = new Map();
+  edges.forEach((e) => byKind.set(e.kind, (byKind.get(e.kind) || 0) + 1));
+  const legend = [...byKind.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(
+      ([kind, n]) => `<li class="web__key" data-kind="${kind}">
+          <svg viewBox="0 0 40 10" aria-hidden="true"><line class="web__edge" x1="2" y1="5" x2="38" y2="5" data-kind="${kind}"/></svg>
+          <b>${kind}</b><i>${n}</i></li>`,
+    )
     .join('');
 
   // 标题里的数字由数据算，不手写 —— 否则加一条关系就对不上了
@@ -316,6 +333,7 @@ function renderWeb() {
       <g class="web__edges">${lines}</g>
       <g class="web__nodes">${nodes}</g>
     </svg>
+    <ul class="web__legend">${legend}</ul>
     <div class="web__pop" id="web-pop" hidden></div>`;
 
   // 悬停（或聚焦）时高亮这个人的所有连线

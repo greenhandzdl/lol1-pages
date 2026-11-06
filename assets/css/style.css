@@ -1402,31 +1402,44 @@ body.is-locked { overflow: hidden; }
 .regions {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
 }
 
-/* 每个地名用该角色自己的两色做底，12 个格子天然就是 12 种颜色 */
+/* 每个地名用该角色自己的两色做底，12 个格子天然就是 12 种颜色。
+   之前 12 个格子长得一模一样 —— 同样的字、同样的排版，只有底色不同，
+   读起来像 12 个同名标签。现在每格左上角放一个大图形（她的元素），
+   远看就能认出「这格是海」「那格是书」。 */
 .region {
   position: relative;
   display: grid;
   gap: 2px;
-  padding: 18px 16px 16px;
+  align-content: end;
+  min-height: 132px;
+  padding: 18px 15px 14px;
   border-radius: 18px;
-  border: 1px solid var(--line);
-  background: linear-gradient(150deg, var(--ra), var(--rb));
+  border: 1px solid color-mix(in srgb, var(--pb) 34%, var(--line));
+  background:
+    radial-gradient(120% 90% at 12% 0%, color-mix(in srgb, #ffffff 62%, transparent), transparent 70%),
+    linear-gradient(150deg, var(--pa), var(--pb));
   text-align: left;
   cursor: pointer;
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.region::after {
-  content: '';
+/* 图形只当底纹：压得很淡、位置固定，不跟文字抢 */
+.region__glyph {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.12));
-  opacity: 0.9;
-  pointer-events: none;
+  top: 10px;
+  right: 8px;
+  color: var(--pa-ink);
+  opacity: 0.42;
+  transition: opacity 0.2s ease, transform 0.3s var(--ease);
 }
+.region__glyph .glyph { width: 46px; height: 46px; }
+[data-theme="dark"] .region__glyph { color: var(--pa-glow); opacity: 0.5; }
+.region:hover .region__glyph,
+.region:focus-visible .region__glyph { opacity: 0.72; transform: rotate(-6deg) scale(1.06); }
+
 .region > * { position: relative; z-index: 1; }
 
 .region:hover,
@@ -1436,26 +1449,33 @@ body.is-locked { overflow: hidden; }
 }
 
 .region__name {
-  font-size: 1.02rem;
+  font-family: var(--font-display);
+  font-size: 1.16rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #3d2b34;
+  /* 用算出来的深色而不是写死的 #3d2b34 —— 12 种底色深浅不一，
+     写死一个颜色在某几种底色上会糊 */
+  color: var(--pa-ink);
 }
+[data-theme="dark"] .region__name { color: var(--pa-glow); }
 .region__who {
   font-size: 0.82rem;
-  color: rgba(61, 43, 52, 0.7);
+  color: var(--pa-ink);
+  opacity: 0.82;
 }
+[data-theme="dark"] .region__who { color: var(--pa-glow); }
 .region__el {
   justify-self: start;
   margin-top: 8px;
   padding: 1px 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.66);
+  background: color-mix(in srgb, #ffffff 62%, transparent);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #6b4f5c;
+  color: var(--pa-ink);
 }
+[data-theme="dark"] .region__el { background: color-mix(in srgb, #000000 26%, transparent); color: var(--pa-glow); }
 
 @media (prefers-reduced-motion: reduce) {
   .region { transition: none; }
@@ -1629,20 +1649,41 @@ body.is-locked { overflow: hidden; }
   overflow: visible;
 }
 
+/* 关系种类分色 + 分线型。
+   之前 19 条线全长一样：挚友和"街角常客"在图上是同一根灰线，
+   图能看出"谁连着谁"，看不出"怎么连的"—— 那这张图等于只画了一半。 */
 .web__edge {
-  stroke: color-mix(in srgb, var(--ink) 22%, transparent);
-  stroke-width: 0.22;
+  --kind: #b9a2ae;
+  stroke: var(--kind);
+  stroke-width: 0.26;
+  stroke-linecap: round;
+  opacity: 0.72;
   transition: stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
 }
+.web__edge[data-kind="挚友"] { --kind: #e0518a; }
+.web__edge[data-kind="师承"] { --kind: #7b5cd6; stroke-dasharray: 2.6 1.4; }
+.web__edge[data-kind="邻居"] { --kind: #3f9a86; }
+.web__edge[data-kind="同好"] { --kind: #d98a1f; stroke-dasharray: 1.1 1.1; }
+.web__edge[data-kind="常客"] { --kind: #2f78b8; stroke-dasharray: 0.9 1.6; }
+.web__edge[data-kind="旧识"] { --kind: #8a7f74; stroke-dasharray: 3.4 1.6; }
+[data-theme="dark"] .web__edge[data-kind="挚友"] { --kind: #ff8ab5; }
+[data-theme="dark"] .web__edge[data-kind="师承"] { --kind: #b79cff; }
+[data-theme="dark"] .web__edge[data-kind="邻居"] { --kind: #7fd4c0; }
+[data-theme="dark"] .web__edge[data-kind="同好"] { --kind: #ffc266; }
+[data-theme="dark"] .web__edge[data-kind="常客"] { --kind: #7fb8e8; }
+[data-theme="dark"] .web__edge[data-kind="旧识"] { --kind: #b8ada2; }
 /* 有一个人被聚焦时，其他线退到后面去 */
 .web.is-focus .web__edge { opacity: 0.18; }
 .web.is-focus .web__edge.is-hot {
   opacity: 1;
-  stroke: var(--pink-2);
-  stroke-width: 0.5;
+  /* 聚焦时保持自己的色 —— 统一涂成品牌粉会把刚分好的颜色信息抹掉 */
+  stroke-width: 0.62;
 }
 
 .web__node { cursor: pointer; }
+/* 节点里的元素图形：底色是浅粉，图形用 ink-2 才看得清 */
+.web__node .web__glyph { color: #4a3340; pointer-events: none; }
+[data-theme="dark"] .web__node .web__glyph { color: #2a1c24; }
 .web__node circle {
   stroke: var(--surface);
   stroke-width: 0.5;
@@ -1664,6 +1705,33 @@ body.is-locked { overflow: hidden; }
 .web__node:focus-visible circle {
   stroke: var(--pink-2);
   stroke-width: 0.8;
+}
+
+/* ---------- 关系图例 ---------- */
+
+.web__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 0.9rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.76rem;
+  color: var(--ink-2);
+}
+.web__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+}
+.web__key svg { width: 34px; height: 9px; flex: none; }
+.web__key .web__edge { stroke-width: 2.2; opacity: 1; }
+.web__key b { font-weight: 600; color: var(--ink); }
+.web__key i {
+  font-style: normal;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- 关系气泡 ---------- */

@@ -322,3 +322,48 @@ def test_nav_never_clips_on_narrow_screens(server, page, width):
     assert page.evaluate(
         "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
     ) == 0
+
+
+def test_web_legend_counts_match_edges(server, page):
+    """图例上的条数必须等于图上真实画出来的线。
+
+    这里踩过一次：图例直接数了 characters.json 里的 directed 关系（38 条），
+    而图上每条无向关系只画一根线（19 根）。于是图例加起来是 38、
+    标题写着 19 —— 同一个区块自相矛盾，而且不报错。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    drawn = page.evaluate(
+        "() => document.querySelectorAll('.web__svg .web__edge').length"
+    )
+    legend = page.evaluate(
+        """() => [...document.querySelectorAll('.web__key')]
+             .map(k => Number(k.querySelector('i').textContent))"""
+    )
+    kinds = page.evaluate(
+        "() => new Set([...document.querySelectorAll('.web__key')].map(k => k.dataset.kind)).size"
+    )
+    assert legend, "图例没渲染出来"
+    assert sum(legend) == drawn, f"图例合计 {sum(legend)} 条，图上实际 {drawn} 条"
+    assert kinds == len(legend), "图例里同一关系种类出现了两次"
+
+
+def test_web_edge_kinds_are_whitelisted(server, page):
+    """每条线的 data-kind 都必须有对应的颜色规则，否则它会静默变成默认灰。"""
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    colors = page.evaluate(
+        """() => {
+          const out = {};
+          document.querySelectorAll('.web__svg .web__edge').forEach(l => {
+            const k = l.dataset.kind;
+            out[k] = getComputedStyle(l).stroke;
+          });
+          return out;
+        }"""
+    )
+    assert colors, "没读到任何连线"
+    missing = [k for k, v in colors.items() if not k]
+    assert missing == [], f"有连线缺 data-kind: {missing}"
+    # 6 种关系应该是 6 个不同颜色（灰也允许，但不能全部相同）
+    assert len(set(colors.values())) >= 5, f"关系种类没有分色，实际只有 {len(set(colors.values()))} 种颜色"

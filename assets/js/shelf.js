@@ -28,6 +28,27 @@ function statusOf(c) {
   };
 }
 
+/**
+ * 四个维度的称号。
+ *
+ * 每档门槛是 3 / 6 / 9 / 12（满）。做成分档而不是一个总分，是因为这四件事
+ * 是完全不同的投入：翻档案最轻，转手办要模型真的加载成功，寻星要打过一局。
+ * 加在一起算总分只会让"我转过几个手办"这件事消失。
+ */
+const TITLES = {
+  seen: [['初见', 3], ['眼熟', 6], ['熟人', 9], ['一个不落', 12]],
+  fav: [['藏了一颗', 3], ['口袋鼓了', 6], ['常常带着', 9], ['全都收好', 12]],
+  turned: [['试了一次', 3], ['上手了', 6], ['转得顺', 9], ['台子转遍', 12]],
+  star: [['找到一颗', 3], ['找到几颗', 6], ['寻星老手', 9], ['星星归她', 12]],
+};
+
+function titleFor(key, n) {
+  const ladder = TITLES[key] || [];
+  let got = '';
+  for (const [name, at] of ladder) if (n >= at) got = name;
+  return got;
+}
+
 function renderStats() {
   const total = state.all.length || 1;
   const rows = state.all.map((c) => statusOf(c));
@@ -38,16 +59,20 @@ function renderStats() {
     star: rows.filter((r) => r.star).length,
   };
   const items = [
-    ['看过档案', counts.seen],
-    ['收进口袋', counts.fav],
-    ['转过手办', counts.turned],
-    ['寻星通关', counts.star],
+    ['seen', '看过档案', counts.seen],
+    ['fav', '收进口袋', counts.fav],
+    ['turned', '转过手办', counts.turned],
+    ['star', '寻星通关', counts.star],
   ];
   $('#shelf-stats').innerHTML = items
-    .map(([label, n]) => {
+    .map(([key, label, n]) => {
       const pct = Math.round((n / total) * 100);
-      return `<div class="shelf__stat">
-        <p class="shelf__statLabel">${label}</p>
+      // 称号只在够到第一档之后出现 —— 一进门就发称号反而没有分量
+      const title = titleFor(key, n);
+      return `<div class="shelf__stat" data-key="${key}">
+        <p class="shelf__statLabel">${label}${
+          title ? `<b class="shelf__title">${title}</b>` : ''
+        }</p>
         <p class="shelf__statNum">${n}<i>/${total}</i></p>
         <div class="shelf__statBar"><span style="width:${pct}%"></span></div>
       </div>`;

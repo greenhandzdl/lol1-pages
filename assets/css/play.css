@@ -123,7 +123,7 @@
   height: 26px;
   border-radius: 50%;
   background: var(--pink-soft);
-  color: #c74d76;
+  color: var(--pink-ink);
   font-size: 0.74rem;
   font-weight: 700;
 }

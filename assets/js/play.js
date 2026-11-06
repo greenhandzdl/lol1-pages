@@ -204,6 +204,7 @@ function renderResult() {
           <p class="quiz__quote">“${c.tagline}”</p>
           <div class="quiz__acts">
             <a class="btn btn--primary" href="/c/${c.id}/">看她的档案 →</a>
+            <a class="btn btn--ghost" href="/c/${c.id}/#story">读她的一天</a>
             <a class="btn btn--ghost" href="/3d/?id=${encodeURIComponent(c.id)}">转动 3D 手办 ✦</a>
           </div>
         </div>

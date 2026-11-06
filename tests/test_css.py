@@ -108,3 +108,59 @@ def test_no_dark_theme_gaps():
     must_override = {"--bg", "--ink"}
     missing = must_override - dark_vars
     assert not missing, f"暗色主题没重定义: {missing}"
+
+
+# ---------- 对比度 ----------
+
+def _luminance(hex_color: str) -> float:
+    """WCAG 相对亮度。"""
+    def ch(i):
+        v = int(hex_color[i:i + 2], 16) / 255
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5)
+
+
+def _contrast(a: str, b: str) -> float:
+    la, lb = _luminance(a), _luminance(b)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _theme_vars(block_start: str) -> dict:
+    """从 style.css 里取某个主题块的变量表。"""
+    style = (CSS_DIR / "style.css").read_text(encoding="utf-8")
+    i = style.index(block_start)
+    seg = style[i:style.index("}", i)]
+    return {
+        m.group(1): m.group(2)
+        for m in re.finditer(r"(--[\w-]+):\s*(#[0-9a-fA-F]{6})", seg)
+    }
+
+
+@pytest.mark.parametrize(
+    "theme,block",
+    [("light", ":root {"), ("dark", '[data-theme="dark"] {')],
+)
+def test_contrast_tokens(theme, block):
+    """正文级文字对背景至少 4.5:1（WCAG AA）。
+
+    这条是纯算术，不需要截图，所以和"不做像素级视觉回归"的决定不冲突。
+
+    来历：--ink-3 原本是 #a98897，对 #fff8f4 只有 3.00:1 —— 用它画的
+    小字（完成度标签、画师名、rel__note）在浅色主题下是糊的，
+    而浏览器测试、溢出测试、JS 报错全都发现不了。
+    """
+    v = _theme_vars(block)
+    bg = v["--bg"]
+    for name in ("--ink", "--ink-2", "--ink-3", "--pink-ink"):
+        assert name in v, f"{theme} 缺 {name}"
+        ratio = _contrast(v[name], bg)
+        assert ratio >= 4.5, f"{theme} {name}={v[name]} 对 --bg={bg} 只有 {ratio:.2f}:1"
+
+
+def test_contrast_on_surface():
+    """卡片底色（--surface-2）上的次要文字也得够 —— 关系卡、标签底色比 --bg 更浅。"""
+    v = _theme_vars(":root {")
+    for name in ("--ink-2", "--ink-3", "--pink-ink"):
+        ratio = _contrast(v[name], v["--surface-2"])
+        assert ratio >= 4.5, f"light {name} 对 --surface-2 只有 {ratio:.2f}:1"

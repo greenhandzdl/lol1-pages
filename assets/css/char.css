@@ -97,6 +97,13 @@ a.tag:hover {
   background: var(--pink-soft);
   transform: translateY(-1px);
 }
+/* 主题标签可点（能筛出别人的）；普通标签只属于她一个人，所以不可点，
+   两者视觉上要能区分开，否则会让人以为点了没反应 */
+a.tag--theme {
+  border-color: color-mix(in srgb, var(--pink) 40%, transparent);
+  color: var(--pink-ink);
+  font-weight: 600;
+}
 
 .char__meta {
   display: grid;
@@ -226,7 +233,7 @@ a.tag:hover {
   font-weight: 700;
   letter-spacing: 0.08em;
 }
-.pref--like .pref__label { color: #e2698f; }
+.pref--like .pref__label { color: var(--pink-ink); }
 .pref--dislike .pref__label { color: var(--ink-3); }
 
 .pref__list {
@@ -319,7 +326,7 @@ a.tag:hover {
   padding: 2px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, #ff8ab5 16%, transparent);
-  color: #c74d76;
+  color: var(--pink-ink);
   font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
@@ -343,3 +350,80 @@ a.tag:hover {
 }
 [data-theme='dark'] .rel { background: rgba(255, 255, 255, 0.04); }
 [data-theme='dark'] .rel__kind { background: rgba(255, 138, 181, 0.16); color: #ffa9c6; }
+
+/* ---------- 「她的一天」时间线 ---------- */
+
+.day {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+
+.day__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0 10px 18px;
+}
+/* 竖线画在圆点后面，只存在于相邻两条之间 */
+.day__item::before {
+  content: '';
+  position: absolute;
+  left: 3.5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-2);
+}
+.day__item:first-child::before { top: 1.35em; }
+.day__item:last-child::before { bottom: calc(100% - 1.35em); }
+.day__item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.05em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+
+.day__time {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  padding-top: 0.15em;
+}
+.day__title {
+  margin: 0 0 3px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.day__text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+
+.char__story {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: var(--ink-2);
+}
+/* 场景段首字下沉一格，和上面的档案正文区分开 */
+.char__story::first-letter {
+  font-family: var(--font-display);
+  font-size: 1.6em;
+  line-height: 1;
+  color: var(--ink);
+}

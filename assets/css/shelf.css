@@ -34,9 +34,23 @@
 
 .shelf__statLabel {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
   font-size: 0.72rem;
   letter-spacing: 0.02em;
   color: var(--ink-3);
+}
+/* 称号：和"看过档案"这种说明性文字待在同一行，但一眼看得出是奖励 */
+.shelf__title {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink) 16%, transparent);
+  color: var(--pink-ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 .shelf__statNum {
   margin: 2px 0 7px;
@@ -174,12 +188,12 @@
   font-variant-numeric: tabular-nums;
 }
 .mk--seen { background: rgba(255, 255, 255, 0.7); color: #6b4f5c; }
-.mk--fav { background: #ffd7e5; color: #c74d76; }
+.mk--fav { background: #ffd7e5; color: #b8406a; }
 .mk--turn { background: #e5d9ff; color: #6a4fa8; }
 .mk--star { background: #fff0c9; color: #a17519; }
 
 [data-theme='dark'] .mk--seen { background: rgba(255, 255, 255, 0.1); color: var(--ink-2); }
-[data-theme='dark'] .mk--fav { background: rgba(255, 138, 181, 0.2); color: #ffa9c6; }
+[data-theme='dark'] .mk--fav { background: rgba(255, 138, 181, 0.2); color: var(--pink-ink); }
 [data-theme='dark'] .mk--turn { background: rgba(183, 156, 255, 0.2); color: #c4aaff; }
 [data-theme='dark'] .mk--star { background: rgba(255, 206, 115, 0.18); color: #ffd88a; }
 

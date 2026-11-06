@@ -96,3 +96,27 @@ def test_live_region(server, page, path):
     page.goto(BASE + path, wait_until="networkidle")
     live = page.eval_on_selector_all("[aria-live]", "els => els.length")
     assert live > 0, f"{path} 没有 aria-live 区域"
+
+
+def test_web_node_keyboard(server, page):
+    """关系网节点必须能纯键盘操作：Tab 得到它、Enter 打开气泡、Esc 关掉。
+
+    节点从 <a href> 换成 <g role="button"> 是为了不让点击直接跳走，
+    代价是本来就靠 href 撑着的键盘路径没了 —— 得手动补回来。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_selector("#web-graph .web__node")
+    node = page.query_selector('#web-graph .web__node[data-id="mio"]')
+    assert node.get_attribute("tabindex") == "0", "节点没有进 Tab 序"
+    assert node.get_attribute("role") == "button"
+
+    page.focus('#web-graph .web__node[data-id="mio"]')
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(150)
+    pop = page.query_selector("#web-pop")
+    assert pop and pop.is_visible(), "Enter 没打开气泡"
+    assert "星野澪" in pop.inner_text()
+
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(150)
+    assert not page.query_selector("#web-pop").is_visible(), "Esc 没关掉气泡"

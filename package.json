@@ -13,7 +13,8 @@
     "check:data": "node scripts/check-data.mjs",
     "test": "./tests/run.sh",
     "test:fast": "./tests/run.sh tests/test_pages.py tests/test_data.py",
-    "test:data": "./tests/run.sh tests/test_data.py tests/test_crosscheck.py"
+    "test:data": "./tests/run.sh tests/test_data.py tests/test_crosscheck.py",
+    "release": "npm run check:data && npm run pages && npm test"
   },
   "devDependencies": {
     "@gltf-transform/cli": "4.5.1",

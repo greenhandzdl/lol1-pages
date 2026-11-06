@@ -1,7 +1,7 @@
 /* lol1.moe · 萝莉图鉴 — vanilla ES module */
 import { collapseNav } from './nav-collapse.js';
 import { store, todayKey } from './store.js';
-import { pickOfDay, lineOfDay } from './daily.js';
+import { pickOfDay, lineOfDay, suggestOfDay } from './daily.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -13,6 +13,7 @@ const state = {
   all: [],
   q: '',
   tag: '',
+  tagIsLegacy: false,
   sort: 'default',
   favOnly: false,
   order: [],
@@ -20,6 +21,13 @@ const state = {
   currentId: null,
   trigger: null,
 };
+
+/**
+ * 主题白名单 —— 和 scripts/check-data.mjs 里那份保持一致。
+ * 放在前端是因为芯片的显示顺序要稳定：按数据出现顺序排，加一个新角色
+ * 就可能让某个主题跳到最前面，用户下次进来位置全变了。
+ */
+const THEMES = ['花与四季', '星光与咒语', '茶与甜点', '书页与静默', '海风与高处', '街角的熟客', '认真做一件小事'];
 
 /* ---------- storage ---------- */
 
@@ -37,17 +45,28 @@ function saveFavs() {
 const byId = (id) => state.all.find((c) => c.id === id);
 const pad2 = (n) => String(n).padStart(2, '0');
 
+/**
+ * 筛选。
+ *
+ * `state.tag` 现在装的是主题（受控词表），但老链接里可能是单个标签
+ * （`?tag=书` 这类分享出去的地址还在），所以 `state.tagIsLegacy` 为真时
+ * 改按 tags 匹配 —— 让旧链接依然落到她想看的那一类，而不是筛出空白。
+ */
 function filtered() {
   const q = state.q.trim().toLowerCase();
   let list = state.all.filter((c) => {
     if (state.favOnly && !state.favs.has(c.id)) return false;
-    if (state.tag && !c.tags.includes(state.tag)) return false;
+    if (state.tag) {
+      const bucket = state.tagIsLegacy ? (c.tags || []) : (c.themes || []);
+      if (!bucket.includes(state.tag)) return false;
+    }
     if (!q) return true;
-    return [c.name, c.nameEn, c.title, c.region, c.element, ...c.tags]
+    return [c.name, c.nameEn, c.title, c.region, c.element, ...c.tags, ...(c.themes || [])]
       .join(' ')
       .toLowerCase()
       .includes(q);
   });
+
   if (state.sort === 'name') {
     list = [...list].sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
   } else if (state.sort === 'random') {
@@ -73,7 +92,15 @@ function imgSrcset(image) {
 
 function cardHTML(c, index) {
   const liked = state.favs.has(c.id);
-  const tags = c.tags.map((t) => `<span class="tag">${t}</span>`).join('');
+  // 卡片上曾经显示 3 个 tags，但 35 个标签里 34 个只属于一个人 ——
+  // 摆出来既不构成"分类"，点了也筛不出第二张卡。换成主题，且可点。
+  const themes = (c.themes || [])
+    .map(
+      (t) =>
+        `<button class="chip chip--tiny" type="button" data-theme="${t}"
+                 aria-label="看「${t}」里的其他人">${t}</button>`,
+    )
+    .join('');
   return `
     <article class="card reveal" data-id="${c.id}">
       <button class="card__body" type="button" aria-haspopup="dialog" aria-label="查看 ${c.name} 的档案">
@@ -87,9 +114,9 @@ function cardHTML(c, index) {
         <span class="card__info">
           <span class="card__name">${c.name}<small>${c.nameEn}</small></span>
           <span class="card__title">${c.title}</span>
-          <span class="card__tags">${tags}</span>
         </span>
       </button>
+      <div class="card__themes">${themes}</div>
       <button class="card__like" type="button" aria-pressed="${liked}" aria-label="收藏 ${c.name}">${liked ? '♥' : '♡'}</button>
     </article>`;
 }
@@ -197,6 +224,8 @@ function renderDaily() {
   store.setSpin(key, c.id);
 
   const stem = c.image.replace(/\.webp$/, '');
+  // 只算一次：同一行里调两遍会读起来像两个不同的东西
+  const suggest = suggestOfDay(key, c);
   host.innerHTML = `
     <a class="daily__face" href="/c/${c.id}/" aria-label="看 ${c.name} 的档案">
       <img src="${c.image}"
@@ -207,7 +236,10 @@ function renderDaily() {
     <div class="daily__text">
       <p class="daily__name">${c.name}<span>${c.title}</span></p>
       <p class="daily__line">“${lineOfDay(key)}”</p>
-      <a class="btn btn--ghost btn--small" href="/c/${c.id}/">看看她 →</a>
+      <div class="daily__acts">
+        <a class="btn btn--ghost btn--small" href="/c/${c.id}/">看看她 →</a>
+        <a class="daily__suggest" href="${suggest.href}">今天适合：${suggest.label}</a>
+      </div>
     </div>`;
 }
 
@@ -220,6 +252,9 @@ function renderDaily() {
  *
  * 用 SVG 而不是 canvas：12 个节点 + 38 条线，SVG 的点击与无障碍都更省事，
  * 而且线宽和文字能跟着主题色走。
+ *
+ * 节点曾经是 <a href="/c/<id>/"> —— 一碰就跳走，等于看不到这张网。
+ * 现在改成 role="button"：点一下在旁边弹出这个人的关系，跳页面放进气囊里。
  */
 function renderWeb() {
   const host = $('#web-graph');
@@ -259,11 +294,13 @@ function renderWeb() {
 
   const nodes = [...pos.entries()]
     .map(([id, p]) => {
-      const [c1, c2] = p.c.palette;
-      return `<a class="web__node" href="/c/${id}/" data-id="${id}">
+      const [, c2] = p.c.palette;
+      const n = (p.c.relations || []).length;
+      return `<g class="web__node" data-id="${id}" role="button" tabindex="0"
+                 aria-expanded="false" aria-label="${p.c.name}，${n} 段关系">
         <circle cx="${p.x}" cy="${p.y}" r="3.4" fill="${c2}" />
         <text x="${p.x}" y="${p.y - 5.6}" text-anchor="middle">${p.c.name}</text>
-      </a>`;
+      </g>`;
     })
     .join('');
 
@@ -275,45 +312,162 @@ function renderWeb() {
     <svg class="web__svg" viewBox="0 0 100 100" role="img" aria-label="${state.all.length} 位角色之间的关系网，共 ${edges.length} 条关系">
       <g class="web__edges">${lines}</g>
       <g class="web__nodes">${nodes}</g>
-    </svg>`;
+    </svg>
+    <div class="web__pop" id="web-pop" hidden></div>`;
 
   // 悬停（或聚焦）时高亮这个人的所有连线
   const allLines = $$('.web__edge', host);
-  $$('.web__node', host).forEach((node) => {
+  const nodesEls = $$('.web__node', host);
+  const focusOn = (id) => {
+    host.classList.add('is-focus');
+    allLines.forEach((l) => {
+      l.classList.toggle('is-hot', l.dataset.a === id || l.dataset.b === id);
+    });
+    nodesEls.forEach((n) => n.classList.toggle('is-hot', n.dataset.id === id));
+  };
+  const focusOff = () => {
+    host.classList.remove('is-focus');
+    allLines.forEach((l) => l.classList.remove('is-hot'));
+    nodesEls.forEach((n) => n.classList.remove('is-hot'));
+  };
+
+  nodesEls.forEach((node) => {
     const id = node.dataset.id;
-    const on = () => {
-      host.classList.add('is-focus');
-      allLines.forEach((l) => {
-        l.classList.toggle('is-hot', l.dataset.a === id || l.dataset.b === id);
-      });
-      node.classList.add('is-hot');
-    };
-    const off = () => {
-      host.classList.remove('is-focus');
-      allLines.forEach((l) => l.classList.remove('is-hot'));
-      node.classList.remove('is-hot');
-    };
-    node.addEventListener('mouseenter', on);
-    node.addEventListener('mouseleave', off);
-    node.addEventListener('focus', on);
-    node.addEventListener('blur', off);
+    node.addEventListener('mouseenter', () => focusOn(id));
+    node.addEventListener('mouseleave', () => { if (!webPop || webPop.dataset.for !== id) focusOff(); });
+    node.addEventListener('focus', () => focusOn(id));
+    node.addEventListener('blur', () => { if (!webPop || webPop.dataset.for !== id) focusOff(); });
+    node.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openWebPop(id, node);
+    });
+    node.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openWebPop(id, node);
+      }
+    });
   });
+
+  // 点空白关掉 —— 气泡盖不住整个图的时候才有意义，但成本很低
+  host.addEventListener('click', () => closeWebPop());
 }
 
+let webPop = null;
+
+/** 关系气泡：把"谁和谁是什么关系"从悬停高亮升级成能读的文字 */
+function openWebPop(id, node) {
+  const host = $('#web-graph');
+  const pop = $('#web-pop', host);
+  if (!pop) return;
+  const c = byId(id);
+  if (!c) return;
+
+  // 再点同一个人 = 收起
+  if (!pop.hidden && pop.dataset.for === id) { closeWebPop(); return; }
+
+  const rels = (c.relations || []).filter((r) => byId(r.id));
+  pop.dataset.for = id;
+  pop.innerHTML = `
+    <p class="web__popName">${c.name}<small>${c.title}</small></p>
+    <ul class="web__popList">${rels
+      .map((r) => {
+        const o = byId(r.id);
+        return `<li><span class="web__popKind">${r.kind || '相识'}</span><a href="/c/${o.id}/">${o.name}</a></li>`;
+      })
+      .join('')}</ul>
+    <a class="web__popMore" href="/c/${id}/">打开她的档案 →</a>`;
+  pop.hidden = false;
+  webPop = pop;
+  node.setAttribute('aria-expanded', 'true');
+  // 气泡内部的点击不该冒泡到 .web 的"点空白关闭"
+  pop.addEventListener('click', (e) => e.stopPropagation());
+
+  // 定位：用节点在页面上的实际位置，而不是换算 viewBox 百分比 ——
+  // svg 有 max-width 和 aspect-ratio，换算容易在小屏偏出去
+  const box = host.getBoundingClientRect();
+  const dot = node.querySelector('circle').getBoundingClientRect();
+  const pw = pop.offsetWidth;
+  const ph = pop.offsetHeight;
+  let left = dot.left + dot.width / 2 - box.left - pw / 2;
+  let top = dot.top - box.top - ph - 10;
+  // 上边放不下就翻到下面
+  if (top < 0) top = dot.bottom - box.top + 10;
+  left = Math.max(4, Math.min(left, box.width - pw - 4));
+  pop.style.left = `${Math.round(left)}px`;
+  pop.style.top = `${Math.round(top)}px`;
+  pop.querySelector('a')?.focus();
+}
+
+function closeWebPop() {
+  const pop = $('#web-pop');
+  if (!pop || pop.hidden) return;
+  const id = pop.dataset.for;
+  pop.hidden = true;
+  pop.innerHTML = '';
+  delete pop.dataset.for;
+  $$('#web-graph .web__node').forEach((n) => {
+    const on = n.dataset.id === id;
+    if (on) n.setAttribute('aria-expanded', 'false');
+  });
+  const host = $('#web-graph');
+  host?.classList.remove('is-focus');
+  $$('#web-graph .web__edge').forEach((l) => l.classList.remove('is-hot'));
+  $$('#web-graph .web__node').forEach((n) => n.classList.remove('is-hot'));
+  webPop = null;
+}
+
+/**
+ * 主题芯片 —— 图鉴的第一层筛选。
+ *
+ * 每个芯片带人数：不是装饰，是为了让人一眼看出"点下去至少能看到几张卡"。
+ * 只有一个人的标签不该做成筛选项，这正是之前 tags 方案的毛病。
+ */
 function renderChips() {
-  const tags = [];
-  state.all.forEach((c) => c.tags.forEach((t) => { if (!tags.includes(t)) tags.push(t); }));
   const chips = $('#chips');
+  if (!chips) return;
+  const counts = new Map();
+  state.all.forEach((c) => (c.themes || []).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
+
+  // 按白名单顺序排 —— 数据驱动但顺序稳定，不会因为加人而整体挪位
+  const list = THEMES.filter((t) => counts.has(t));
   chips.innerHTML =
-    `<button class="chip" type="button" data-tag="" aria-pressed="${state.tag === ''}">全部</button>` +
-    tags.map((t) => `<button class="chip" type="button" data-tag="${t}" aria-pressed="${state.tag === t}">${t}</button>`).join('');
+    `<button class="chip" type="button" data-theme="" aria-pressed="${!state.tag || state.tagIsLegacy}">全部</button>` +
+    list
+      .map(
+        (t) =>
+          `<button class="chip" type="button" data-theme="${t}"
+                   aria-pressed="${state.tag === t && !state.tagIsLegacy}">${t}<i class="chip__n">${counts.get(t)}</i></button>`,
+      )
+      .join('');
+
   $$('#chips .chip').forEach((chip) => {
     chip.addEventListener('click', () => {
-      state.tag = chip.dataset.tag;
-      $$('#chips .chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.tag === state.tag)));
+      const t = chip.dataset.theme;
+      state.tag = t;
+      state.tagIsLegacy = false;
+      syncChips();
       renderGrid();
     });
   });
+}
+
+/** 芯片的选中态独立同步 —— 点卡片上的主题、点旧链接，芯片都要跟着变 */
+function syncChips() {
+  $$('#chips .chip').forEach((c) => {
+    const t = c.dataset.theme;
+    const on = t === '' ? !state.tag : state.tag === t && !state.tagIsLegacy;
+    c.setAttribute('aria-pressed', String(on));
+  });
+}
+
+/** 从卡片或详情里的主题点进来：就地筛选，并滚回图鉴顶部 */
+function applyTheme(t) {
+  state.tag = t;
+  state.tagIsLegacy = false;
+  syncChips();
+  renderGrid();
+  document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function bindCards() {
@@ -322,6 +476,10 @@ function bindCards() {
     card.querySelector('.card__body').addEventListener('click', () => openDetail(id, card.querySelector('.card__body')));
     const like = card.querySelector('.card__like');
     like.addEventListener('click', () => toggleFav(id, like));
+    // 主题芯片在卡片里，不能冒泡到 .card__body 的点击
+    card.querySelectorAll('.card__themes .chip').forEach((btn) => {
+      btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+    });
     const img = card.querySelector('img');
     img.addEventListener('error', () => { img.style.visibility = 'hidden'; }, { once: true });
   });
@@ -405,13 +563,29 @@ function openDetail(id, trigger) {
   $('#detail-element').textContent = c.element;
   $('#detail-artist').textContent = c.artist;
   $('#detail-license').textContent = c.license;
-  $('#detail-tags').innerHTML = c.tags.map((t) => `<span class="tag">${t}</span>`).join('');
+  $('#detail-tags').innerHTML =
+    (c.themes || [])
+      .map(
+        (t) =>
+          `<button class="chip chip--tiny" type="button" data-theme="${t}">${t}</button>`,
+      )
+      .join('') + c.tags.map((t) => `<span class="tag">${t}</span>`).join('');
+  $('#detail-tags')
+    .querySelectorAll('.chip')
+    .forEach((btn) => btn.addEventListener('click', () => {
+      closeDetail();
+      applyTheme(btn.dataset.theme);
+    }));
+  renderDetailRels(c);
   const indexEl = $('#detail-index');
   indexEl.textContent = idx >= 0 ? `${idx + 1} / ${list.length}` : '';
 
   // 弹窗里给出该角色的独立页入口，让 /c/<id>/ 不是孤儿页
   const pageLink = $('#detail-page');
   if (pageLink) pageLink.href = `c/${encodeURIComponent(c.id)}/`;
+  // 故事在专页上，弹窗里只放进得去的门 —— 弹窗已经够长了
+  const storyLink = $('#detail-story');
+  if (storyLink) storyLink.href = `c/${encodeURIComponent(c.id)}/#story`;
   state.listIds = list.map((x) => x.id);
   syncDetailLike();
 
@@ -429,6 +603,40 @@ function openDetail(id, trigger) {
     $('#detail-img').style.visibility = 'hidden';
   }, { once: true });
   syncURL();
+}
+
+/**
+ * 详情弹窗里的人物关系。
+ *
+ * 关系原本只在角色页和首页关系网出现，弹窗里完全看不到 —— 但弹窗才是
+ * 大多数人实际停留的地方。这里列出来，并且点一下就能在弹窗里直接翻到
+ * 那个人（不是新开页面）：保持"翻档案"的连贯感。
+ */
+function renderDetailRels(c) {
+  const host = $('#detail-rels');
+  if (!host) return;
+  const rels = (c.relations || []).filter((r) => byId(r.id));
+  if (!rels.length) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  host.hidden = false;
+  host.innerHTML = `
+    <p class="detail__relTitle">她和谁有关</p>
+    <div class="drel">${rels
+      .map((r) => {
+        const o = byId(r.id);
+        return `<button class="drel__item" type="button" data-goto="${o.id}">
+          <span class="drel__kind">${r.kind || '相识'}</span>
+          <span class="drel__name">${o.name}</span>
+          <span class="drel__note">${r.note || o.title}</span>
+        </button>`;
+      })
+      .join('')}</div>`;
+  host.querySelectorAll('[data-goto]').forEach((btn) => {
+    btn.addEventListener('click', () => openDetail(btn.dataset.goto));
+  });
 }
 
 function syncDetailLike() {
@@ -474,9 +682,30 @@ function readURL() {
   const p = new URLSearchParams(location.search);
   state.q = p.get('q') || '';
   state.tag = p.get('tag') || '';
+  state.tagIsLegacy = false;
   state.sort = ['default', 'random', 'name'].includes(p.get('sort')) ? p.get('sort') : 'default';
   state.favOnly = p.get('fav') === '1';
   return p.get('id');
+}
+
+/**
+ * 把 `?tag=` 落到主题或旧标签上。
+ *
+ * 历史链接里 `?tag=书` 是当标签用的；现在芯片换成了主题，这些链接
+ * 不能变成一片空白。命中主题就按主题筛，只命中标签就退回标签模式。
+ */
+function resolveTag() {
+  if (!state.tag) return;
+  if (THEMES.includes(state.tag) && state.all.some((c) => (c.themes || []).includes(state.tag))) {
+    state.tagIsLegacy = false;
+    return;
+  }
+  if (state.all.some((c) => (c.tags || []).includes(state.tag))) {
+    state.tagIsLegacy = true;
+    return;
+  }
+  state.tag = '';
+  state.tagIsLegacy = false;
 }
 
 /* ---------- toast ---------- */
@@ -616,7 +845,7 @@ async function init() {
   state.order = state.all.map((c) => c.id);
   state.original = new Map(state.all.map((c, i) => [c.id, i]));
   if (state.sort === 'random') state.order = shuffle(state.order);
-  if (state.tag && !state.all.some((c) => c.tags.includes(state.tag))) state.tag = '';
+  resolveTag();
 
   $('#search').value = state.q;
   renderChips();
@@ -689,6 +918,7 @@ async function init() {
   });
 
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeWebPop();
     if (e.key === 'r' && !e.metaKey && !e.ctrlKey && !e.altKey && !dialog.open) {
       const el = document.activeElement;
       if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;

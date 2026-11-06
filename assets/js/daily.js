@@ -45,3 +45,30 @@ const LINES = [
 export function lineOfDay(dateKey) {
   return LINES[hash(`line::${dateKey}`) % LINES.length];
 }
+
+/**
+ * 今天适合做点什么。
+ *
+ * 每日卡片原本只给一句台词，看完就没有下一步 —— 让人知道"现在能去哪"
+ * 比再加一句抒情更有用。同样用日期做种子，同一天永远是同一件。
+ */
+const SUGGEST = [
+  { label: '去 3D 手办台转一圈', href: '/3d/' },
+  { label: '玩一局地名配对', href: '/play/' },
+  { label: '翻开收藏册，看看还差谁', href: '/shelf/' },
+  { label: '读一段她的一天', href: '/c/' },
+  { label: '在关系网里找找她', href: '/#web' },
+  { label: '看看她们住在哪', href: '/#regions' },
+];
+
+export function suggestOfDay(dateKey, pick) {
+  // 带上今天抽到的人：人会换，适合做的事也应该跟着换一点
+  const i = hash(`suggest::${dateKey}::${pick ? pick.id : ''}`) % SUGGEST.length;
+  const s = SUGGEST[i];
+  // "/c/" 那条要落到今天这个人的专页上，别给一个泛泛的链接
+  if (s.href === '/c/' && pick) {
+    return { label: `读 ${pick.name} 的一天`, href: `/c/${pick.id}/#story` };
+  }
+  if (s.href === '/c/') return { label: '从图鉴里挑一个人读', href: '/#gallery' };
+  return s;
+}

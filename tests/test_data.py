@@ -155,3 +155,115 @@ def test_every_character_reachable(chars):
             unreachable.append(f"{target['id']} → {got}")
 
     assert not unreachable, f"这些角色永远测不出来: {unreachable}"
+
+
+# ---------- 主题（首页筛选用）----------
+
+THEMES = ["花与四季", "星光与咒语", "茶与甜点", "书页与静默", "海风与高处", "街角的熟客", "认真做一件小事"]
+
+
+def test_themes_in_vocab(chars):
+    """主题必须是受控词表里的值，且每人 2~3 个。
+
+    来历：首页筛选用的是 tags —— 35 个标签里 34 个只对应一个人，
+    点一下等于点名，筛选形同虚设。换成主题之后，"筛选"才有意义。
+    """
+    for c in chars:
+        themes = c.get("themes")
+        assert themes, f"{c['id']} 没有 themes"
+        assert 2 <= len(themes) <= 3, f"{c['id']} themes 为 {len(themes)} 个（应 2~3）"
+        for t in themes:
+            assert t in THEMES, f"{c['id']} 主题「{t}」不在词表里"
+
+
+def test_themes_coverage(chars):
+    """每个主题至少 3 个人 —— 只有两个人的"主题"点进去还是像点名。"""
+    for t in THEMES:
+        n = sum(1 for c in chars if t in c.get("themes", []))
+        assert n >= 3, f"主题「{t}」只有 {n} 人"
+
+
+def test_themes_stable_order(chars):
+    """词表里每个主题都得有人用，别留下死条目。"""
+    used = {t for c in chars for t in c.get("themes", [])}
+    assert used == set(THEMES), f"词表与实际使用不一致: 未使用 {set(THEMES) - used}"
+
+
+def test_chip_counts_match_data(chars):
+    """首页芯片上写的人数必须等于实际能筛出来的人数。
+
+    这条是防"改数据忘了重建"：index.html 里的 noscript 兜底和
+    chips 都由数据算出，数字对不上说明有地方没跟上。
+    """
+    home = (ROOT / "index.html").read_text(encoding="utf-8")
+    for t in THEMES:
+        n = sum(1 for c in chars if t in c.get("themes", []))
+        assert f"<b>{t}</b>" in home, f"index.html 的 noscript 兜底里没有主题「{t}」"
+        # 兜底列表里这一项应该正好有 n 个链接
+        seg_start = home.index(f"<b>{t}</b>")
+        seg_end = home.index("</li>", seg_start)
+        links = home[seg_start:seg_end].count('href="c/')
+        assert links == n, f"index.html 里「{t}」列了 {links} 人，数据里是 {n} 人（忘了 npm run pages？）"
+
+
+# ---------- story / day（本轮新增的内容字段）----------
+
+DAY_SLOTS = ["早晨", "白天", "傍晚", "夜里"]
+
+
+def _bigrams(text: str) -> set:
+    s = "".join(text.split())
+    return {s[i:i + 2] for i in range(len(s) - 1)}
+
+
+def test_story_length(chars):
+    """story 是"一个小场景"，太短就退化成了 tagline。
+
+    和 bio 分开写是有意的：bio 可以概括（她是怎样的人），
+    story 必须具体到某一天、某一级台阶、某一页被折过的角。
+    """
+    for c in chars:
+        n = len(c.get("story", ""))
+        assert n >= 100, f"{c['id']} story 只有 {n} 字"
+
+
+def test_story_not_repeating_bio(chars):
+    """story 与 bio 的字二元组重合率要低 —— 高了就是复制粘贴。"""
+    bad = []
+    for c in chars:
+        a, b = _bigrams(c["bio"]), _bigrams(c["story"])
+        rate = len(a & b) / max(len(b), 1)
+        if rate > 0.6:
+            bad.append(f"{c['id']} {rate:.0%}")
+    assert not bad, f"story 与 bio 重合过多: {bad}"
+
+
+def test_day_slots(chars):
+    """「她的一天」必须恰好四段，时段固定且有序，每段有标题和正文。"""
+    for c in chars:
+        day = c.get("day")
+        assert isinstance(day, list) and len(day) == 4, f"{c['id']} day 不是 4 段"
+        assert [d["time"] for d in day] == DAY_SLOTS, f"{c['id']} day 时段或顺序不对"
+        for i, d in enumerate(day):
+            assert d.get("title"), f"{c['id']} day[{i}] 缺 title"
+            assert len(d.get("text", "")) >= 20, f"{c['id']} day[{i}] 正文太短"
+
+
+def test_bio_raised_to_300(chars):
+    """bio 这一轮从均值 189 扩到 300+，掉回去说明改动被覆盖了。"""
+    short = [(c["id"], len(c["bio"])) for c in chars if len(c["bio"]) < 300]
+    assert not short, f"这些角色 bio 不足 300 字: {short}"
+
+
+def test_habits_unique(chars):
+    """小习惯是"她和别人不一样的地方"，两个人一样就没意思了。"""
+    habits = [c["habit"] for c in chars]
+    assert len(habits) == len(set(habits)), "有小习惯重复"
+
+
+def test_day_slot_titles_reasonably_unique(chars):
+    """同一时段里，12 个人的标题不该大面积撞车（撞了就说明是模板凑的）。"""
+    for slot_i, slot in enumerate(DAY_SLOTS):
+        titles = [c["day"][slot_i]["title"] for c in chars]
+        dup = [t for t in set(titles) if titles.count(t) > 1]
+        assert not dup, f"「{slot}」时段标题重复: {dup}"

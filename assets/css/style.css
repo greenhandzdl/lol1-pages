@@ -11,10 +11,12 @@
   --surface-2: #fff3f7;
   --ink: #4a3340;
   --ink-2: #7d5c6b;
-  --ink-3: #a98897;
+  --ink-3: #8a6678;
   --pink: #ff8ab5;
-  --pink-2: #e75f93;
+  --pink-2: #c53d70;
   --pink-soft: #ffd7e5;
+  /* 浅底上的粉色小字：--pink / --pink-2 是图形色，当正文文字对比度不够 */
+  --pink-ink: #b8406a;
   --lav: #b79cff;
   --mint: #9fe3cf;
   --sky: #a8d4ff;
@@ -44,8 +46,9 @@
   --ink-2: #e0c8d5;
   --ink-3: #b39aa8;
   --pink: #ff9dc2;
-  --pink-2: #ff7fb0;
+  --pink-2: #ff9ec4;
   --pink-soft: #4a2a3c;
+  --pink-ink: #ffb6ce;
   --lav: #c4aaff;
   --mint: #8fd8c3;
   --sky: #9cc8f5;
@@ -609,6 +612,27 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--bg);
 }
 
+/* 芯片上的人数：让人先看到"点下去会有几张卡" */
+.chip__n {
+  margin-left: 0.38rem;
+  font-style: normal;
+  font-size: 0.68em;
+  opacity: 0.62;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 卡片 / 详情里的主题芯片比工具栏那排小一号。
+   用粉色字把它们和旁边不可点的普通标签区分开 —— 否则看不出哪个能点。 */
+.chip--tiny {
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  border-color: color-mix(in srgb, var(--pink) 40%, transparent);
+  background: var(--surface-2);
+  color: var(--pink-ink);
+  font-weight: 600;
+}
+.chip--tiny:hover { border-color: var(--pink); color: var(--pink-2); }
+
 .toolbar__right {
   grid-column: 2;
   grid-row: 1;
@@ -736,6 +760,19 @@ button, input, select { font: inherit; color: inherit; }
 }
 .card__tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
 
+/* 卡片上的主题。放在 .card__body 之外——那是个 <button>，
+   按钮里嵌按钮是非法的，点的时候也会一起触发"打开档案"。 */
+.card__themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  padding: 0 1.05rem 1.15rem;
+}
+/* 有主题行时 info 的底部留白让给主题，否则卡片会长出一条空当。
+   没有 :has 的浏览器只是多留一点白，不影响使用。 */
+.card:has(.card__themes) .card__info { padding-bottom: 0.55rem; }
+
+
 .tag {
   padding: 0.18rem 0.5rem;
   border-radius: 999px;
@@ -786,6 +823,59 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 1.25rem;
   color: var(--ink);
 }
+
+/* ---------- <noscript> 兜底 ---------- */
+
+/*
+ * 关掉 JS 时首页三块（图鉴 / 地域 / 关系网）的内容。
+ * 由 scripts/build-pages.mjs 生成，正常访问时浏览器根本不会渲染它，
+ * 所以这里的样式只服务于"真的没开 JS"这一种情况 —— 简单、可读即可。
+ */
+.ns__title {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.ns__themes {
+  margin: 0 0 1.4rem;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 2;
+  color: var(--ink-2);
+}
+.ns__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ns__cards a {
+  display: block;
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  text-decoration: none;
+}
+.ns__cards img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 0.4rem;
+  border-radius: 14px;
+}
+.ns__cards b { color: var(--ink); }
+.ns__plain {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 2;
+  color: var(--ink-2);
+}
+.ns__plain a { color: var(--ink); }
+.ns a:hover { text-decoration: underline; }
 
 /* ---------- about ---------- */
 
@@ -996,7 +1086,72 @@ button, input, select { font: inherit; color: inherit; }
 }
 .detail__meta dt { color: var(--ink-3); }
 .detail__meta dd { margin: 0; color: var(--ink-2); text-align: right; }
-.detail__tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.detail__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+
+/* ---------- 详情里的关系（弹窗内那条路）---------- */
+
+.detail__relTitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+.drel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+}
+/* 并排会让 note 挤成两行字，460px 以下保持单列 */
+@media (min-width: 460px) {
+  .drel { grid-template-columns: 1fr 1fr; }
+}
+.drel__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'kind name'
+    'note note';
+  gap: 0.15rem 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.drel__item:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.drel__kind {
+  grid-area: kind;
+  align-self: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink) 18%, transparent);
+  color: var(--pink-ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.drel__name {
+  grid-area: name;
+  align-self: center;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.drel__note {
+  grid-area: note;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
 .detail__actions {
   margin-top: auto;
   display: flex;
@@ -1186,6 +1341,8 @@ body.is-locked { overflow: hidden; }
   .toolbar__right { grid-column: 1; grid-row: 2; width: 100%; justify-content: space-between; }
   .chips { grid-row: 3; }
   .card__info { padding: 0.7rem 0.75rem 0.9rem; }
+  .card:has(.card__themes) .card__info { padding-bottom: 0.45rem; }
+  .card__themes { padding: 0 0.75rem 0.9rem; }
   .card__name { font-size: 1rem; }
   .card__name small { display: block; margin-left: 0; }
   .card__title { font-size: 0.74rem; }
@@ -1410,6 +1567,23 @@ body.is-locked { overflow: hidden; }
   color: var(--ink-2);
   max-width: 32ch;
 }
+.daily__acts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.8rem;
+}
+/* 今天适合做点什么：一句话，链到对应页面，比再加一句抒情有用 */
+.daily__suggest {
+  font-size: 0.78rem;
+  color: var(--pink-ink);
+  text-decoration: none;
+  border-bottom: 1px dashed color-mix(in srgb, var(--pink-ink) 45%, transparent);
+}
+.daily__suggest:hover { border-bottom-style: solid; }
+@media (max-width: 460px) {
+  .daily__suggest { flex-basis: 100%; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .daily__face { transition: none; }
@@ -1419,12 +1593,14 @@ body.is-locked { overflow: hidden; }
 /* ---------- 关系网（批次四）---------- */
 
 .web {
+  position: relative;
   display: grid;
   place-items: center;
   padding: clamp(10px, 2vw, 20px) 0;
 }
 
 .web__svg {
+  display: block;
   width: 100%;
   max-width: 620px;
   aspect-ratio: 1;
@@ -1468,6 +1644,94 @@ body.is-locked { overflow: hidden; }
   stroke-width: 0.8;
 }
 
+/* ---------- 关系气泡 ---------- */
+
+/*
+ * 节点从 <a> 换成 <g role="button"> 之后，跳转不能让节点直接承担 ——
+ * 那样又变回"一碰就走"。气泡里放关系和出口。
+ */
+.web__pop {
+  position: absolute;
+  z-index: 5;
+  min-width: 168px;
+  max-width: min(260px, calc(100% - 8px));
+  padding: 0.7rem 0.8rem;
+  border-radius: 16px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  animation: pop-in 0.14s var(--ease);
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+.web__popName {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.web__popName small {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.web__popList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.web__popList li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+.web__popList a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.web__popList a:hover { border-bottom-color: var(--pink); }
+.web__popKind {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink) 18%, transparent);
+  color: var(--pink-ink);
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+.web__popMore {
+  display: inline-block;
+  margin-top: 0.55rem;
+  font-size: 0.76rem;
+  color: var(--pink-ink);
+  text-decoration: none;
+}
+.web__popMore:hover { text-decoration: underline; }
+
+/* 窄屏上气泡浮在图里会盖住节点本身，改成图下方的一块 */
+@media (max-width: 560px) {
+  .web__pop {
+    position: static;
+    order: 2;
+    margin-top: 0.8rem;
+    max-width: none;
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .web__edge, .web__node circle, .web__node text { transition: none; }
+  .web__pop { animation: none; }
 }

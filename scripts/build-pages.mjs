@@ -24,6 +24,9 @@ const DATA = path.join(ROOT, 'assets/data/characters.json');
 const OUT = path.join(ROOT, 'c');
 const SITE = 'https://lol1.moe';
 
+/** 主题白名单 —— 与 check-data.mjs / assets/js/main.js 保持一致 */
+const THEMES = ['花与四季', '星光与咒语', '茶与甜点', '书页与静默', '海风与高处', '街角的熟客', '认真做一件小事'];
+
 /* ---------- 工具 ---------- */
 
 /** HTML 转义，数据里可能有引号、& 这类字符 */
@@ -56,6 +59,44 @@ function bioParas(bio) {
     .filter(Boolean)
     .map((t) => `<p>${esc(t)}</p>`)
     .join('');
+}
+
+/**
+ * 「今天她在做什么」—— 一段场景。
+ *
+ * bio 是档案（她是怎样的人），story 是切片（某一天发生过什么）。
+ * 两者分开写是有意的：档案可以概括，场景必须具体到"三天""第七个本子"
+ * 这种细节上，否则读者记不住。
+ */
+function storyBlock(c) {
+  if (!c.story) return '';
+  return `<section class="char__block" aria-labelledby="story-title" id="story">
+      <h2 class="char__blockTitle" id="story-title">一个小场景</h2>
+      <p class="char__story">${esc(c.story)}</p>
+    </section>`;
+}
+
+/**
+ * 「她的一天」四段。用 <ol> 而不是 div：它本来就是有先后顺序的四段，
+ * 读屏应该按"第一条、第二条"念，而不是四个平级的块。
+ */
+function dayBlock(c) {
+  if (!Array.isArray(c.day) || !c.day.length) return '';
+  const items = c.day
+    .map(
+      (d) => `<li class="day__item">
+        <span class="day__time">${esc(d.time)}</span>
+        <div class="day__body">
+          <h3 class="day__title">${esc(d.title)}</h3>
+          <p class="day__text">${esc(d.text)}</p>
+        </div>
+      </li>`,
+    )
+    .join('');
+  return `<section class="char__block" aria-labelledby="day-title">
+      <h2 class="char__blockTitle" id="day-title">她的一天</h2>
+      <ol class="day">${items}</ol>
+    </section>`;
 }
 
 /** 喜欢与不喜欢：两组小卡片 */
@@ -121,9 +162,13 @@ function page(c, prev, next, byId) {
     isPartOf: { '@type': 'WebSite', name: 'lol1.moe · 萝莉图鉴', url: `${SITE}/` },
   };
 
-  const tags = c.tags
-    .map((t) => `<a class="tag" href="/?tag=${encodeURIComponent(t)}">${esc(t)}</a>`)
-    .join('');
+  // 主题是能筛出多人的那一层，做成链接直接跳首页筛选；
+  // tags 只属于她一个人，点进去只会剩一张卡，所以保持纯文本。
+  const tags =
+    (c.themes || [])
+      .map((t) => `<a class="tag tag--theme" href="/?tag=${encodeURIComponent(t)}">${esc(t)}</a>`)
+      .join('') +
+    c.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('');
 
   const navLink = (ch, label) =>
     ch
@@ -226,6 +271,8 @@ ${THEME_BOOT}
           ${c.model ? `<div><dt>3D</dt><dd>${esc(c.modelCredit)}</dd></div>` : ''}
         </dl>
 
+        ${dayBlock(c)}
+        ${storyBlock(c)}
         ${likesBlock(c)}
         ${relationsBlock(c, byId)}
 
@@ -255,6 +302,96 @@ ${THEME_BOOT}
 </html>`;
 }
 
+/* ---------- 首页 noscript 兜底 ---------- */
+
+/**
+ * 首页的图鉴、地域、关系网全是 JS 渲染的。关掉 JS 之后首页基本是一片空白 ——
+ * 而 c/<id>/ 恰恰是为了「不执行 JS 也能读到档案」才存在的。
+ *
+ * 这里把三份纯 HTML 摘要写进 <noscript>。浏览器开着 JS 时，<noscript> 的内容
+ * 按原始文本处理、不会变成 DOM 元素，所以不存在"名字被读两遍"的问题 ——
+ * 也因此不要给它加 aria-hidden，那会在真正关掉 JS 时把内容从朗读里也一起抹掉。
+ *
+ * 只替换 index.html 里带 data-build 标记的 noscript，其余（手写正文）一概不碰；
+ * 标记缺失就报错，绝不静默追加。
+ */
+function noScriptGallery(list) {
+  const themes = THEMES.map((t) => {
+    const members = list.filter((c) => (c.themes || []).includes(t));
+    if (!members.length) return '';
+    return `<li><b>${esc(t)}</b>：${members.map((c) => `<a href="c/${c.id}/">${esc(c.name)}</a>`).join('、')}</li>`;
+  }).join('');
+  const cards = list
+    .map((c) => {
+      const stem = '/' + c.image.replace(/\.webp$/, '');
+      return `<li>
+      <a href="c/${c.id}/">
+        <img src="/${c.image}" srcset="${stem}-400.webp 400w, ${stem}-600.webp 600w, /${c.image} 768w"
+             sizes="(max-width: 860px) 44vw, 180px" width="768" height="1024" loading="lazy" decoding="async"
+             alt="插画：${esc(c.name)} · ${esc(c.title)}">
+        <span><b>${esc(c.name)}</b> · ${esc(c.title)}<br>${esc(c.region)} · ${esc(c.element)}</span>
+      </a>
+    </li>`;
+    })
+    .join('\n');
+  return `<noscript data-build="gallery">
+  <div class="ns">
+    <p class="ns__title">不开启 JavaScript 也能读完这本图鉴 —— 下面是全部 ${list.length} 位</p>
+    <ul class="ns__themes">${themes}</ul>
+    <ul class="ns__cards">
+${cards}
+    </ul>
+  </div>
+</noscript>`;
+}
+
+function noScriptRegions(list) {
+  const items = list
+    .map((c) => `<li><b>${esc(c.region)}</b> — <a href="c/${c.id}/">${esc(c.name)}</a>（${esc(c.element)}）</li>`)
+    .join('');
+  return `<noscript data-build="regions">
+  <ul class="ns__plain">${items}</ul>
+</noscript>`;
+}
+
+function noScriptWeb(list) {
+  const byId = new Map(list.map((c) => [c.id, c]));
+  const items = list
+    .flatMap((c) =>
+      (c.relations || [])
+        .filter((r) => byId.has(r.id))
+        .map(
+          (r) =>
+            `<li><a href="c/${c.id}/">${esc(c.name)}</a> —${esc(r.kind || '相识')}→ <a href="c/${r.id}/">${esc(byId.get(r.id).name)}</a></li>`,
+        ),
+    )
+    .join('');
+  return `<noscript data-build="web">
+  <ul class="ns__plain">${items}</ul>
+</noscript>`;
+}
+
+/** 把三块 noscript 写回 index.html */
+async function writeNoScript(list) {
+  const file = path.join(ROOT, 'index.html');
+  const html = await readFile(file, 'utf8');
+  const blocks = {
+    gallery: noScriptGallery(list),
+    regions: noScriptRegions(list),
+    web: noScriptWeb(list),
+  };
+  let out = html;
+  for (const [key, block] of Object.entries(blocks)) {
+    const re = new RegExp(`<noscript data-build="${key}"[^>]*>[\\s\\S]*?</noscript>`);
+    if (!re.test(out)) {
+      throw new Error(`index.html 里找不到 data-build="${key}" 的 <noscript> 标记，已中止（不猜位置）`);
+    }
+    out = out.replace(re, block);
+  }
+  if (out !== html) await writeFile(file, out, 'utf8');
+  console.log('index.html noscript 兜底已更新');
+}
+
 /* ---------- 主流程 ---------- */
 
 async function main() {
@@ -279,6 +416,7 @@ async function main() {
 
   console.log(`\n生成 ${characters.length} 个角色页。`);
 
+  await writeNoScript(characters);
   await writeSitemap(characters);
   await writeFeed(characters);
 }

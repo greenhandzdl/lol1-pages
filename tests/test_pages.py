@@ -493,3 +493,38 @@ def test_theme_boot_is_identical_on_every_page(server):
         cwd=str(ROOT), capture_output=True, text=True,
     )
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_every_page_has_a_way_back():
+    """内页都要有页脚，页脚里要有回首页的路。
+
+    /3d/ 曾经是唯一没有页脚的页面 —— 从 3D 台点到别的页面突然多出一条底线，
+    再点回来又没了，像少画了一块。这是手抄模板时漏掉的。
+
+    两个例外，都有理由，所以按角色分开判：
+      · 首页自己就是家，不需要"回首页"
+      · 404 是刻意做成极简的一屏（没有导航也没有页脚），正文里有一个
+        回到首页的主按钮就够了 —— 给它补页脚反而会破坏那种"走错了"的空旷感
+    """
+    import pathlib
+    # 首页不入列：它自己就是家
+    pages = ["3d/index.html", "play/index.html", "shelf/index.html"]
+    pages += [f"c/{d.name}/index.html" for d in pathlib.Path(ROOT / "c").iterdir() if d.is_dir()]
+
+    missing = []
+    for rel in pages:
+        html = (ROOT / rel).read_text(encoding="utf-8")
+        if "<footer" not in html:
+            missing.append(f"{rel}（没有页脚）")
+            continue
+        footer = html[html.index("<footer"):]
+        footer = footer[: footer.index("</footer>")]
+        if 'href="/"' not in footer and 'href="/index.html"' not in footer:
+            missing.append(f"{rel}（页脚里没有回首页的链接）")
+
+    # 404 单独判：正文里必须有回首页的路
+    err = (ROOT / "404.html").read_text(encoding="utf-8")
+    if 'href="/"' not in err:
+        missing.append("404.html（找不到回首页的路）")
+
+    assert not missing, "这些问题：\n  " + "\n  ".join(missing)

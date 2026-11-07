@@ -283,6 +283,16 @@
   color: var(--ink-3);
 }
 
+.stage__foot {
+  margin-top: clamp(14px, 3vw, 28px);
+  padding: 18px 0 26px;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+.stage__foot p { margin: 0; }
+.stage__foot a { color: var(--ink-2); }
+
 /* ---------- 小游戏浮层 ---------- */
 .game {
   grid-column: 1 / -1;

@@ -9,12 +9,13 @@
     "model": "node scripts/3d/prepare-model.mjs",
     "model:strip": "node scripts/3d/strip-texture.mjs",
     "img": "node scripts/img/build-srcset.mjs",
-    "pages": "node scripts/build-pages.mjs",
+    "pages": "node scripts/build-pages.mjs && node scripts/sync-theme-boot.mjs",
     "check:data": "node scripts/check-data.mjs",
     "test": "./tests/run.sh",
     "test:fast": "./tests/run.sh tests/test_pages.py tests/test_data.py",
     "test:data": "./tests/run.sh tests/test_data.py tests/test_crosscheck.py",
-    "release": "npm run check:data && npm run pages && npm test"
+    "release": "npm run check:data && npm run pages && node scripts/sync-theme-boot.mjs --check && npm test",
+    "theme": "node scripts/sync-theme-boot.mjs"
   },
   "devDependencies": {
     "@gltf-transform/cli": "4.5.1",

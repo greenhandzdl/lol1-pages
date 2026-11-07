@@ -582,3 +582,56 @@ def test_noscript_images_all_have_a_source():
                 if "src=" not in tag:
                     bad.append(f"{f.relative_to(ROOT)}: {tag[:80]}")
     assert not bad, "noscript 里的图片没有 src：\n  " + "\n  ".join(bad)
+
+
+def test_3d_degrades_without_downloading_three(server, browser):
+    """省流量 / 2G 时不该下载 three.js，但必须给出插画。
+
+    capability.js 特意做成"不 import three"的小模块，就是为了让这条路
+    真的省流量 —— 如果哪天有人顺手在里面 import 了 three，降级就形同虚设，
+    而页面上看起来一切正常（插画照样显示），根本不会有人发现。
+    所以这里既查"three 没下载"，也查"插画显示了"。
+    """
+    cases = {
+        "save-data": "Object.defineProperty(navigator,'connection',{value:{saveData:true},configurable:true});",
+        "slow-2g": "Object.defineProperty(navigator,'connection',{value:{effectiveType:'2g',saveData:false},configurable:true});",
+    }
+    problems = []
+    for name, script in cases.items():
+        ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+        pg = ctx.new_page()
+        pg.add_init_script(script)
+        reqs, errs = [], []
+        pg.on("request", lambda r: reqs.append(r.url))
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        try:
+            pg.goto(f"{BASE}/3d/", wait_until="networkidle")
+            pg.wait_for_timeout(2000)
+            three = [r for r in reqs if "three.bundle" in r]
+            state = pg.evaluate("document.querySelector('.stage').dataset.state")
+            has_img = pg.evaluate("!!document.querySelector('#fallback-img').getAttribute('src')")
+            if three:
+                problems.append(f"{name}：不该下载 three.js，实际下了 {len(three)} 次")
+            if state != "fallback":
+                problems.append(f"{name}：状态应为 fallback，实际 {state}")
+            if not has_img:
+                problems.append(f"{name}：没显示插画（整块空白）")
+            if errs:
+                problems.append(f"{name}：JS 报错 {errs[:1]}")
+        finally:
+            ctx.close()
+    assert not problems, "降级路径有问题：\n  " + "\n  ".join(problems)
+
+
+def test_capability_module_does_not_pull_in_three():
+    """静态检查：capability.js 的 import 闭包里不能出现 three。
+
+    这条比运行时检查更早失败 —— 一旦有人加了一句 import，构建阶段就知道。
+    """
+    import pathlib
+    root = ROOT / "assets" / "js" / "stage"
+    src = (root / "capability.js").read_text(encoding="utf-8")
+    imports = re.findall(r"""^\s*import\s[\s\S]*?from\s+['"]([^'"]+)['"]""", src, re.M)
+    assert not imports, f"capability.js 不该有任何 import，实际有：{imports}"
+    # 动态 import 也不行：一样会把 three 拉进这一层
+    assert "import(" not in src, "capability.js 里出现了动态 import"

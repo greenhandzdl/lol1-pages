@@ -479,3 +479,34 @@ document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');
 
 - 测试 **200 → 202**，全绿（4 分 34 秒）。
 - 关掉 JS 后的可见字数：`/3d/` 164 → **223**，`/play/` 140 → **229**。
+
+## 第十一轮 · 把降级路径也测上
+
+上一轮修的是「没有 JS」，这一轮把同类的降级路径一次查清，结果三条都正常 ——
+但三条都没有测试，等于随时会坏。
+
+### 查过的三条（都正常）
+
+| 场景 | 结果 |
+|---|---|
+| WebGL 不可用 | 状态切 `fallback`，插画 274×365 正常，0 报错 |
+| `saveData` / 2G | three.js **下载 0 次**，插画正常 |
+| localStorage 里是坏 JSON + 非法主题值 | 存档自动重建，主题落回 light，0 报错 |
+
+### 新加了两条测试
+
+`test_3d_degrades_without_downloading_three` —— 省流量 / 2G 下同时查三件事：
+three 没下载、状态是 fallback、插画真的显示了。只查前两条不够 ——
+哪天降级逻辑坏了但插画还在，页面上看起来一切正常。
+
+`test_capability_module_does_not_pull_in_three` —— 静态查 `capability.js`
+不许有任何 `import`。这个模块特意做成"不 import three"，就是为了让降级
+真的省流量；哪天有人顺手加一句 import，降级就静默失效，而**页面看起来完全正常**。
+
+写第二条时我先写了一行永远为真的断言
+（`assert "three" not in src... or True`），等于没测。发现后改成检查
+`import(` 动态导入也不能有。
+
+### 数字
+
+- 测试 **202 → 204**，全绿（4 分 39 秒）。

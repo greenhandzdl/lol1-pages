@@ -75,6 +75,17 @@
 
       <div class="play__tabs" id="play-tabs" role="tablist" aria-label="选择玩法"></div>
       <div class="play__stage" id="play-body" aria-live="polite"></div>
+
+      <!-- 这一页原来没有 noscript 兜底：关掉 JS 只剩一行标题和一大块空白。
+           小游戏本身要靠 JS，但"读完 12 位"这件事不需要 —— 给一条路。 -->
+      <noscript>
+        <p class="empty">
+          <b>小游戏需要开启 JavaScript</b>
+          两种玩法（猜邻居、比性格）都是现场算出来的，关掉脚本就没得玩。
+          不过图鉴本身不需要脚本：<a href="/">首页</a>列出了全部 12 位，
+          每位都有独立档案页。
+        </p>
+      </noscript>
     </div>
   </main>
 

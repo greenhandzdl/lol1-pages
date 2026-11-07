@@ -84,7 +84,16 @@
   <main id="stage-main" class="stage" data-state="loading">
     <div class="stage__viewport" id="viewport" aria-label="3D 角色展示区">
       <noscript>
-        <img class="stage__fallback" alt="樱井小春" width="768" height="1024">
+        <!-- 这个 <img> 原来没有 src —— 关掉 JS 的用户看到一个 80×26 的
+             破图框，里面对着「樱井小春」四个字。补上插画本身，
+             并说清楚这里本来应该是什么。 -->
+        <img class="stage__fallback" src="/assets/img/works/sakura-600.webp"
+             alt="樱井小春的插画（3D 手办需要开启 JavaScript 才能转动）"
+             width="600" height="800" loading="lazy" decoding="async">
+        <p class="stage__nojs">
+          3D 手办台需要 JavaScript 才能转动。上面是她的插画；
+          想看完整档案可以去 <a href="/c/sakura/">樱井小春的页面</a>。
+        </p>
       </noscript>
       <p class="stage__hint" aria-hidden="true">拖动旋转 · 双指缩放</p>
       <div class="stage__loading" id="loading" role="status" aria-live="polite">

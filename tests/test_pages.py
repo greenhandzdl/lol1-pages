@@ -528,3 +528,57 @@ def test_every_page_has_a_way_back():
         missing.append("404.html（找不到回首页的路）")
 
     assert not missing, "这些问题：\n  " + "\n  ".join(missing)
+
+
+def test_pages_degrade_without_javascript(server, browser):
+    """关掉 JS 也要有东西可读。
+
+    这个站点是纯静态的，正文本来就该不依赖脚本 —— 但有几处靠 JS 渲染的区域
+    在关掉脚本后会变成空白或破图：
+
+      · /3d/ 的 noscript 兜底 <img> 没有 src，显示成一个 80×26 的破图框
+      · /play/ 完全没有 noscript，只剩标题和一大块空白
+
+    爬虫和屏蔽脚本的用户走的就是这条路，而且这是"看不清"而不是"报错"，
+    平时开发根本不会注意到。
+    """
+    expectations = {
+        "/": (300, "图鉴全表"),
+        "/3d/": (180, "插画 + 说明"),
+        "/play/": (180, "一条去图鉴的路"),
+        "/shelf/": (150, "说明"),
+        "/c/sakura/": (1000, "完整档案"),
+    }
+    thin = []
+    for path, (min_chars, what) in expectations.items():
+        ctx = browser.new_context(java_script_enabled=False, viewport={"width": 390, "height": 844})
+        pg = ctx.new_page()
+        try:
+            pg.goto(f"{BASE}{path}", wait_until="domcontentloaded")
+            pg.wait_for_timeout(300)
+            n = len(pg.inner_text("body"))
+            if n < min_chars:
+                thin.append(f"{path} 只有 {n} 字（至少要 {min_chars}，需要{what}）")
+        finally:
+            ctx.close()
+    assert not thin, "关掉 JavaScript 后这些页面内容太少：\n  " + "\n  ".join(thin)
+
+
+def test_noscript_images_all_have_a_source():
+    """noscript 里的 <img> 必须有 src —— 否则关掉 JS 就是一个破图框。"""
+    import pathlib
+    bad = []
+    for f in pathlib.Path(ROOT).rglob("*.html"):
+        if "node_modules" in str(f):
+            continue
+        # 先去掉注释：注释里写「这个 <img> 原来没有 src」也会被当成标签
+        html = re.sub(r"<!--[\s\S]*?-->", "", f.read_text(encoding="utf-8"))
+        for m in re.finditer(r"<img\b[^>]*>", html):
+            tag = m.group(0)
+            # 只看 noscript 附近的：带 stage__fallback 或位于 noscript 块内
+            idx = html.index(tag)
+            head = html[:idx]
+            if head.count("<noscript") > head.count("</noscript>"):
+                if "src=" not in tag:
+                    bad.append(f"{f.relative_to(ROOT)}: {tag[:80]}")
+    assert not bad, "noscript 里的图片没有 src：\n  " + "\n  ".join(bad)

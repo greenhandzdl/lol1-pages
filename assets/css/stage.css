@@ -177,6 +177,13 @@
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
 }
+.stage__nojs {
+  margin: 14px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.stage__nojs a { color: var(--pink-ink); }
 
 /* ---------- 信息面板 ---------- */
 .stage__panel {

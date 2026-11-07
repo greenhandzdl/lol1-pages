@@ -5,6 +5,8 @@ import pytest
 
 from conftest import BASE, ROOT as ROOT_FOR_TESTS, VIEWPORTS
 
+ROOT = ROOT_FOR_TESTS
+
 STATIC_PAGES = [
     "/",
     "/c/sakura/",
@@ -462,3 +464,32 @@ def test_model_thumbs_exist_for_all_models(server):
         if not (ROOT_FOR_TESTS / f"assets/img/models/{cid}.png").exists()
     ]
     assert not missing, f"缺缩略图: {missing}"
+
+
+def test_theme_query_works_on_every_page(server, page):
+    """?theme=dark 必须在每一页生效。
+
+    这段「首帧前应用主题」的内联脚本原本在 18 个页面里各抄一份，
+    其中 17 份漏了查询参数那一行 —— 于是分享出去的暗色链接到别的页面
+    就变回浅色，而且所有「暗色主题」的测试其实都在量浅色主题。
+    """
+    pages = ["/", "/3d/", "/play/", "/shelf/", "/404.html", "/c/sakura/"]
+    bad = []
+    for path in pages:
+        for theme in ("light", "dark"):
+            page.goto(f"{BASE}{path}?theme={theme}", wait_until="networkidle")
+            page.wait_for_timeout(200)
+            got = page.evaluate("document.documentElement.dataset.theme")
+            if got != theme:
+                bad.append(f"{path} 期望 {theme}，实际 {got}")
+    assert not bad, "这些页面的 ?theme= 不生效：\n  " + "\n  ".join(bad)
+
+
+def test_theme_boot_is_identical_on_every_page(server):
+    """每一页的主题脚本必须逐字一致 —— 一旦有页面落后于来源，就是抄漏了。"""
+    import subprocess, sys
+    r = subprocess.run(
+        ["node", "scripts/sync-theme-boot.mjs", "--check"],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert r.returncode == 0, r.stdout + r.stderr

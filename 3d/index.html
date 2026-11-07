@@ -28,13 +28,18 @@
   }
   </script>
   <script>
-    // 首帧前应用主题，避免闪白（与首页同款）
-    try {
-      document.documentElement.classList.add('js');
-      const s = localStorage.getItem('lol1:theme');
-      const d = matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');
-    } catch (_) {}
+    (function () {
+      try {
+        document.documentElement.classList.add('js');
+        var q = new URLSearchParams(location.search).get('theme');
+        var s = localStorage.getItem('lol1:theme');
+        var dark = q ? q === 'dark' : s ? s === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    })();
   </script>
 </head>
 <body class="page-stage">

@@ -66,14 +66,20 @@ function esc(s) {
     .replace(/'/g, '&#39;');
 }
 
-/** 首屏前应用主题，避免闪白（与首页同款） */
+// 首屏主题脚本从唯一来源取 —— 以前每页各抄一份，抄漏了 ?theme= 参数，
+// 导致分享出去的暗色链接到别的页面就变回浅色。
+// 改 assets/js/theme-boot.js，然后跑 node scripts/sync-theme-boot.mjs。
 const THEME_BOOT = `    (function () {
       try {
         document.documentElement.classList.add('js');
+        var q = new URLSearchParams(location.search).get('theme');
         var s = localStorage.getItem('lol1:theme');
-        var d = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.dataset.theme = s || (d ? 'dark' : 'light');
-      } catch (e) {}
+        var dark = q ? q === 'dark' : s ? s === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
     })();`;
 
 /* ---------- 页面模板 ---------- */

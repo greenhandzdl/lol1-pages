@@ -277,3 +277,24 @@ def test_skip_link_is_readable_when_focused(server, page):
     assert box and box["y"] >= 0 and box["x"] >= 0, f"聚焦后跳转链接还在屏幕外：{box}"
     ratio, dark, light = _measure(page, skip)
     assert ratio >= AA_NORMAL, f"跳转链接聚焦时 {ratio:.2f}:1 (字{dark} 底{light})"
+
+
+def test_stage_labels_use_glow_accent_in_dark(server, page):
+    """3D 台的 accent 文字在暗色主题下要换成提亮版。
+
+    --pa-ink 是按浅底算的深色 accent，压在#1c1420 上只剩 2.22:1。
+    style.css 里有全站的 [data-theme="dark"] { --pa-ink: var(--pa-glow) }，
+    但 --pa / --pa-glow 是挂在角色元素上的行内变量，stage.css 的选择器
+    不一定吃到那条规则 —— 必须自己再查一次主题。
+    """
+    page.goto(f"{BASE}/3d/?theme=dark", wait_until="networkidle")
+    page.wait_for_timeout(1600)
+    failures = []
+    for sel, label in ((".stage__eyebrow", "地名行"), (".stage__thumb[aria-current='true'] em", "当前缩略图")):
+        el = page.locator(sel).first
+        if not el.count():
+            continue
+        ratio, dark, light = _measure(page, el)
+        if ratio < AA_NORMAL:
+            failures.append(f"{label} {ratio:.2f}:1 (字{dark} 底{light})")
+    assert not failures, "3D 台暗色主题下这些文字不够: " + ", ".join(failures)

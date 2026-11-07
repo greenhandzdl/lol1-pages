@@ -43,12 +43,12 @@
     document.documentElement.classList.add('js');
   </script>
   <script>
-    // Apply the saved theme before first paint to avoid a flash.
     (function () {
       try {
+        document.documentElement.classList.add('js');
         var q = new URLSearchParams(location.search).get('theme');
-        var saved = localStorage.getItem('lol1:theme');
-        var dark = q ? q === 'dark' : saved ? saved === 'dark'
+        var s = localStorage.getItem('lol1:theme');
+        var dark = q ? q === 'dark' : s ? s === 'dark'
           : window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       } catch (e) {

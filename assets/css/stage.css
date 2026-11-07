@@ -198,6 +198,19 @@
   color: var(--pa-ink);
   transition: color 0.4s var(--ease);
 }
+/* --pa-ink 是按浅底算出来的深色 accent，压在暗色的 #1c1420 上只剩
+   2.22:1（实测「樱见町 · 花」）。全站的换色规则在 style.css 的
+   [data-theme="dark"] 里，但 --pa / --pa-glow 是挂在角色元素上的行内变量，
+   stage.css 这几处得自己再查一次主题，不能指望那条规则一定命中。
+
+   三处一起改，不然下次换配色只改一处，剩下的又会掉回去：
+   .stage__eyebrow（地名行）、.stage__side dd（侧栏数值）、
+   当前缩略图的标注。 */
+[data-theme="dark"] .stage__eyebrow,
+[data-theme="dark"] .stage__side dd,
+[data-theme="dark"] .stage__thumb[aria-current='true'] em {
+  color: var(--pa-glow);
+}
 .stage__name {
   margin: 0 0 4px;
   font-family: var(--font-display);

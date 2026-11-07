@@ -47,7 +47,10 @@ def test_page_loads(browser, server, path, vp):
     ctx.close()
 
 
-EXPECTED_NAV = ["图鉴", "地域", "3D 手办台", "收藏册", "小游戏", "关于", "内容政策"]
+# 主导航只放「真正能独立打开的页面」。
+# 地域 / 关于 / 内容政策 是首页里的某一段，入口在页脚 ——
+# 它们和独立页面同级平铺，正是导航"层次不对、读起来模糊"的根源。
+EXPECTED_NAV = ["图鉴", "3D 手办台", "收藏册", "小游戏"]
 
 
 @pytest.mark.parametrize("path", ["/", "/shelf/", "/play/", "/3d/", "/c/sakura/"])

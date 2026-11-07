@@ -77,16 +77,15 @@
       </a>
 
       <nav class="nav__links" aria-label="主导航">
-        <!-- 前四个是「本页的某一段」（带 data-spy，由 nav-spy.js 标出当前位置），
-             后三个是「另一个页面」，不参与滚动高亮 —— 混在一起是导航栏
-             看不出东西的根源之一。 -->
-        <a class="nav__link nav__link--samepage" href="#gallery" data-spy="gallery">图鉴</a>
-        <a class="nav__link nav__link--samepage" href="#regions" data-spy="regions">地域</a>
+        <!-- 只放「真正的页面」。
+             原先这里是 7 项平铺：图鉴 / 地域 / 3D 手办台 / 收藏册 / 小游戏 /
+             关于 / 内容政策。其中 4 项其实只是首页里的某一段，和另外 3 个
+             页面同级 —— 7 个一样的字、一样的颜色，层次是平的，所以模糊。
+             「地域 / 关于 / 内容政策」在页脚有入口，不占这里的位置。 -->
+        <a class="nav__link" href="#gallery" aria-current="page">图鉴</a>
         <a class="nav__link" href="3d/">3D 手办台</a>
         <a class="nav__link" href="shelf/">收藏册</a>
         <a class="nav__link" href="play/">小游戏</a>
-        <a class="nav__link nav__link--samepage" href="#about" data-spy="about">关于</a>
-        <a class="nav__link nav__link--samepage" href="#policy" data-spy="policy">内容政策</a>
       </nav>
 
       <a class="icon-btn" href="https://github.com/greenhandzdl/lol1-pages" target="_blank" rel="noopener" aria-label="GitHub 源码">
@@ -409,6 +408,10 @@
       <p>© 2026 lol1.moe · 用爱发电</p>
       <p class="footer__note">插画：Anima AI · 代码 MIT · 无广告 · 无追踪</p>
       <p>
+        <a href="#regions">各地域</a>
+        ·
+        <a href="#about">关于</a>
+        ·
         <a href="https://github.com/greenhandzdl/lol1-pages" target="_blank" rel="noopener">源码</a>
         ·
         <a href="#policy">内容政策</a>

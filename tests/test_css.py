@@ -274,3 +274,62 @@ def test_component_styles_load_on_every_page_that_uses_them(server, page):
             "() => [...document.querySelectorAll('link[rel=stylesheet]')].map(l => l.getAttribute('href'))"
         )
         assert any(css in (h or "") for h in hrefs), f"{path} 没有加载 {css}，{selector} 会没有样式"
+
+
+def test_no_stray_top_level_braces():
+    """CSS 里不能有落单的 `}`。
+
+    括号配对检查（数 { 和 } 的个数）抓不住这个：多一个 } 配一个 }，
+    数量仍然相等。但多出来的那个会**提前闭合前面的规则**，把紧随其后的
+    规则甩到选择器外面，整块静默失效 —— 浏览器不报错，页面只是少了一块样式。
+
+    实际踩过：一次编辑多留了一个 `}`，`.icon-btn` 的整条基础规则被甩出去，
+    GitHub 图标和主题按钮都变回没有样式的裸元素（主题按钮甚至变回
+    浏览器默认的方块按钮），而括号配对检查全绿。
+
+    这里扫描「顶层出现非法字符」：在 depth==0 的位置只允许出现
+    选择器、at-rule 或注释，出现孤立的 `}` 或裸声明就是错的。
+    """
+    import re
+    import pathlib
+
+    problems = []
+    for f in sorted(pathlib.Path("assets/css").glob("*.css")):
+        src = f.read_text(encoding="utf-8")
+        # 去掉注释和字符串，避免误判
+        src = re.sub(r"/\*[\s\S]*?\*/", "", src)
+        src = re.sub(r'"[^"]*"|\'[^\']*\'', "", src)
+
+        depth = 0
+        for i, ch in enumerate(src):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth < 0:
+                    line = src[:i].count("\n") + 1
+                    problems.append(f"{f.name}:{line} 多余的 }}")
+                    depth = 0
+        if depth:
+            problems.append(f"{f.name} 结尾还有 {depth} 个 {{ 没闭合")
+
+        # 顶层裸声明：在 depth==0 出现 "xxx: yyy;" 而前面没有选择器
+        depth = 0
+        buf = ""
+        for ch in src:
+            if ch == "{":
+                depth += 1
+                buf = ""
+            elif ch == "}":
+                depth = max(0, depth - 1)
+                buf = ""
+            else:
+                if depth == 0:
+                    buf += ch
+                    if ";" in buf:
+                        stmt = buf.strip()
+                        if re.search(r"^[a-z-]+\s*:", stmt):
+                            problems.append(f"{f.name} 顶层出现裸声明：{stmt[:60]}")
+                        buf = ""
+
+    assert not problems, "CSS 结构有问题：\n  " + "\n  ".join(problems)

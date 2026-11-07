@@ -1509,8 +1509,10 @@ body.is-locked { overflow: hidden; }
 [data-theme="dark"] .region__name { color: var(--pa-ink); }
 .region__who {
   font-size: 0.82rem;
+  /* 原来这里有个 opacity: 0.82 想做"次要信息"的层级，结果是 13px 的字
+     被稀释到 2.96–3.63:1（12 张卡片全部低于 AA，最差薄荷 2.96）。
+     层级改用字号和字重表达：名字 700，人名 400 —— 不加透明度。 */
   color: var(--pa-ink);
-  opacity: 0.82;
 }
 [data-theme="dark"] .region__who { color: var(--pa-ink); }
 .region__el {

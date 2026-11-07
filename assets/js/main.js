@@ -744,6 +744,9 @@ function openDetail(id, trigger) {
   if (trigger) state.trigger = trigger;
 
   const dialog = $('#detail');
+  // 弹窗也得带上这个人自己的配色 —— 否则里面的六维性格条永远是默认粉色，
+  // 和第四轮"12 人有 12 种颜色"的承诺对不上。卡片和地域卡都是这么带的。
+  dialog.setAttribute('style', accentStyle(c.palette));
   $('#detail-img').style.visibility = '';
   $('#detail-img').src = c.image;
   $('#detail-img').alt = `插画：${c.name} · ${c.title}`;

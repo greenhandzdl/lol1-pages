@@ -77,7 +77,11 @@ export function inkFor(light, deep, { bg = '#fff8f4', ratio = 4.6, hueBias = 0.6
     // 角色页的引言竖线旁的浅色块）。只对 --bg 达标是不够的 ——
     // 实测最差的一组只有 2.17:1，肉眼就是"字没了"。
     if (contrast(c, bg) < ratio) continue;
-    if (alsoOn.some((b) => contrast(c, b) < 3.4)) continue;
+    // 3.4 是"大字"门槛（≥24px 或 ≥18.66px 粗体）。但 --pa-ink 也被 11–13px 的
+    // 小字用着（地域卡的人名、关系标签、性格标签），那些位置实测只有 3.41:1。
+    // 所以按小字的 4.5 判 —— 提到 4.5 之后 12 个人的最小通道差从 8 掉到 7，
+    // 仍然分得开（第四轮担心的是压到 2/255 那种程度）。
+    if (alsoOn.some((b) => contrast(c, b) < 4.5)) continue;
     return c;
   }
   return best;

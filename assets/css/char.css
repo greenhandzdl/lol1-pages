@@ -350,7 +350,9 @@ a.tag--theme {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--ink-3);
+  /* 这个标签压在「--ink 4% + --ink 9%」两层叠出来的浅灰块上，
+     底色比页面本身更暗，--ink-3 到这里只剩 4.48:1。用 --ink-2。 */
+  color: var(--ink-2);
 }
 
 .char__regionNote {

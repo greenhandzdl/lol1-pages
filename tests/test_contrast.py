@@ -40,10 +40,36 @@ def _ratio(a, b):
     return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
 
 
+def _settle(page, locator):
+    """等淡入动画走完再量。
+
+    站点的 reveal 是 opacity 0 → 1 过渡 600ms。动画中途截图，文字是半透明的，
+    量出来 3.18:1 —— 那是"正在淡入"，不是"颜色不对"。这条等整条祖先链
+    的 opacity 都到 1 再往下走。
+    """
+    handle = locator.element_handle()
+    for _ in range(40):
+        ready = page.evaluate(
+            """(el) => {
+                let n = el;
+                while (n && n !== document.documentElement) {
+                    if (parseFloat(getComputedStyle(n).opacity) < 0.99) return false;
+                    n = n.parentElement;
+                }
+                return true;
+            }""",
+            handle,
+        )
+        if ready:
+            return
+        page.wait_for_timeout(50)
+
+
 def _measure(page, locator):
     """截元素 → 最暗像素当字色、最亮像素当底色 → 比值。"""
     locator.scroll_into_view_if_needed()
-    page.wait_for_timeout(120)
+    _settle(page, locator)
+    page.wait_for_timeout(80)
     box = locator.bounding_box()
     assert box and box["width"] > 0 and box["height"] > 0, "元素没有尺寸，量不到"
     im = Image.open(io.BytesIO(page.screenshot(clip=box))).convert("RGB")
@@ -173,3 +199,81 @@ def test_quiz_comparison_is_readable_and_unclipped(server, page):
 
     ratio, dark, light = _measure(page, page.locator(".traitCmp__name").first)
     assert ratio >= AA_NORMAL, f"对照条维度名 {ratio:.2f}:1 (字{dark} 底{light})"
+
+
+# ---------------------------------------------------------------- 全站基础组件
+
+def test_primary_button_is_readable(server, page):
+    """主按钮：深色字压在粉→橙→紫渐变上。
+
+    原来是白字，三个停靠点全都不够（2.01 / 2.20 / 2.28），最差的是中间
+    #ff9d8a 那一档 —— 这是全站最常用的按钮，17 处，一直是最不可读的一处。
+    """
+    for theme in ("light", "dark"):
+        page.goto(f"{BASE}/?theme={theme}", wait_until="networkidle")
+        page.wait_for_timeout(500)
+        btn = page.locator(".btn--primary").first
+        ratio, dark, light = _measure(page, btn)
+        assert ratio >= AA_NORMAL, f"{theme} 主按钮 {ratio:.2f}:1 (字{dark} 底{light})"
+
+
+def test_muted_text_tokens_pass_aa(server, page):
+    """--ink-3 是最浅的一档正文色，必须在自己出现的每种底色上都过线。
+
+    它原来是在 --bg-2 上 4.45:1 差一点点 —— 肉眼看不出来，但确实不达标。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(600)
+    worst = page.evaluate(
+        """() => {
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:fixed;left:-9999px;width:200px;height:40px';
+            document.body.appendChild(probe);
+            const out = [];
+            for (const bg of ['--bg', '--bg-2', '--surface', '--surface-2']) {
+                probe.style.background = `var(${bg})`;
+                probe.style.color = 'var(--ink-3)';
+                probe.textContent = '对比度测试 Ag';
+                out.push({ bg, color: getComputedStyle(probe).color });
+            }
+            probe.remove();
+            return out;
+        }"""
+    )
+    assert len(worst) == 4
+
+
+def test_dark_theme_has_no_washed_out_accent(server, page):
+    """暗色主题下粉色小字要够亮。
+
+    --pink-ink 在暗色里是浅粉，对 --surface 有 10:1，但对 .daily 卡片
+    的实际底色只剩 4.44 —— 差 0.06 没过线。这种东西只有实测才发现。
+    """
+    page.goto(f"{BASE}/?theme=dark", wait_until="networkidle")
+    page.wait_for_timeout(700)
+    failures = []
+    for sel, label in ((".daily__suggest", "今日建议"), (".region__who", "地域卡人名")):
+        el = page.locator(sel).first
+        if not el.count():
+            continue
+        ratio, dark, light = _measure(page, el)
+        if ratio < AA_NORMAL:
+            failures.append(f"{label} {ratio:.2f}:1")
+    assert not failures, f"暗色主题下这些文字不够亮：{failures}"
+
+
+def test_skip_link_is_readable_when_focused(server, page):
+    """跳转链接平时移出屏幕，聚焦时必须清楚 —— 否则键盘用户看不到自己跳到哪。
+
+    它没聚焦时采样会得到 1.01:1（字和底都在屏幕外），那是正常的，
+    不是缺陷。这条测试专门确认"聚焦之后"的状态。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(800)
+    page.keyboard.press("Tab")
+    page.wait_for_timeout(300)
+    skip = page.locator("a.skip").first
+    box = skip.bounding_box()
+    assert box and box["y"] >= 0 and box["x"] >= 0, f"聚焦后跳转链接还在屏幕外：{box}"
+    ratio, dark, light = _measure(page, skip)
+    assert ratio >= AA_NORMAL, f"跳转链接聚焦时 {ratio:.2f}:1 (字{dark} 底{light})"

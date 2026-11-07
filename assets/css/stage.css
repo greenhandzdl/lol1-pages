@@ -430,9 +430,12 @@
 }
 .stage__thumb em {
   font-style: normal;
-  font-size: 0.6rem;
+  /* 10px 的小字压在「角色底色 × 8%」的浅色块上，实测 3.46–4.46:1，
+     一半的缩略图不够 AA。这里同时做两件事：字号 0.6 → 0.66rem，
+     颜色 --ink-3 → --ink-2。只调颜色的话 10px 还是太小。 */
+  font-size: 0.66rem;
   letter-spacing: 0.02em;
-  color: var(--ink-3);
+  color: var(--ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

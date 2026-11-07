@@ -1,7 +1,7 @@
 # 测试
 
 ```bash
-npm test          # 全部 192 项（约 4 分钟）
+npm test          # 全部 196 项（约 4 分钟）
 npm run test:fast # 页面冒烟 + 数据校验（约 40 秒）
 npm run test:data # 纯数据，不起浏览器（约 1 秒）
 ```

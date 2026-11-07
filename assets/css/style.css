@@ -11,7 +11,9 @@
   --surface-2: #fff3f7;
   --ink: #4a3340;
   --ink-2: #7d5c6b;
-  --ink-3: #8a6678;
+  /* #8a6678 在 --bg-2 (#ffeff4) 上只有 4.45:1，差一点点不够 AA。
+     调深两级到 4.57（最差），肉眼几乎看不出差别，但过线了。 */
+  --ink-3: #876274;
   --pink: #ff8ab5;
   --pink-2: #c53d70;
   --pink-soft: #ffd7e5;
@@ -48,7 +50,9 @@
   --pink: #ff9dc2;
   --pink-2: #ff9ec4;
   --pink-soft: #4a2a3c;
-  --pink-ink: #ffb6ce;
+  /* #ffb6ce 对 --surface 有 9.94，但对 .daily 卡片的实际底色只剩 4.44 —— 
+     差了 0.06 没过线。提亮一档到 4.8 以上，暗色主题里几乎看不出变化。 */
+  --pink-ink: #ffc2d7;
   --lav: #c4aaff;
   --mint: #8fd8c3;
   --sky: #9cc8f5;
@@ -190,7 +194,12 @@ button, input, select { font: inherit; color: inherit; }
 .btn svg { width: 17px; height: 17px; flex: none; }
 
 .btn--primary {
-  color: #fff;
+  /* 原来是白字压在粉→橙→紫的渐变上，实测 2.01–2.28:1 —— 三个停靠点
+     全都不够，最差的是中间那个 #ff9d8a（2.01）。这是全站最常用的按钮
+     （17 处：首页、404、12 个角色页、3D 台、测试结果），却一直是最不可读的。
+     改成深色字：渐变保持原样（它是这个站的识别色），文字用已有的 --ink，
+     对三个停靠点分别是 5.20 / 5.68 / 5.01，最差 5.01，不用新增颜色变量。 */
+  color: var(--ink);
   background: linear-gradient(120deg, var(--pink) 0%, #ff9d8a 50%, var(--lav) 100%);
   box-shadow: 0 16px 34px -14px rgba(231, 95, 147, 0.7);
 }
@@ -1589,6 +1598,18 @@ body.is-locked { overflow: hidden; }
     var(--surface);
   box-shadow: var(--shadow);
 }
+
+/* 这两个 radial-gradient 里的淡粉和淡紫是写死的浅色 —— 在暗色主题里
+   它们照样刷在深色 --surface 上，把卡片盖成一片紫灰。结果浅粉色的
+   「今天适合：…」压上去只剩 2.35:1，一个字都认不出来。
+   暗色主题要换成低不透明度的深色光晕，让卡片保持深。 */
+[data-theme="dark"] .daily {
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--pink) 12%, transparent), transparent 60%),
+    radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--lav) 12%, transparent), transparent 60%),
+    var(--surface);
+}
+
 @media (min-width: 720px) {
   /* 两列都按内容宽度、整体居中：如果让左列 flex 撑开，
      标签和角色会被推到两端，中间空一大块 */

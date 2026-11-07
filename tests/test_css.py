@@ -252,3 +252,25 @@ def test_grain_does_not_replace_page_glow(server, page):
       return s.backgroundImage;
     }""")
     assert "svg" in grain, "颗粒层不见了"
+
+
+def test_component_styles_load_on_every_page_that_uses_them(server, page):
+    """渲染出来的组件，它的样式必须在当前页加载的 CSS 里。
+
+    这个坑今天踩了两次：
+      · .traitCmp 写进 char.css，但 /play/ 只加载 play.css —— 对照条宽度为 0
+      · .traits  写进 char.css，但首页只加载 style.css —— 弹窗里的性格条没样式
+    两次都是"看着有 DOM、实际没样式"，肉眼在截图里不明显，测试里也不好发现。
+    所以这里改成按页面核对：组件出现了，它所在的样式文件就必须被加载。
+    """
+    checks = [
+        ("/", ".traits", "assets/css/style.css"),
+        ("/play/", ".traitCmp", "assets/css/play.css"),
+        ("/c/sakura/", ".traits", "assets/css/style.css"),
+    ]
+    for path, selector, css in checks:
+        page.goto(BASE + path, wait_until="networkidle")
+        hrefs = page.evaluate(
+            "() => [...document.querySelectorAll('link[rel=stylesheet]')].map(l => l.getAttribute('href'))"
+        )
+        assert any(css in (h or "") for h in hrefs), f"{path} 没有加载 {css}，{selector} 会没有样式"

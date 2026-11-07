@@ -117,7 +117,7 @@ function cardHTML(c, index) {
           <span class="card__hint" aria-hidden="true">翻开她的档案 →</span>
         </span>
         <span class="card__info">
-          <span class="card__name">${c.name}<small>${c.nameEn}</small></span>
+          <span class="card__name">${c.name}<small>${c.nameEn}</small>${c.model ? `<span class="card__model" title="她有一座可以转着看的 3D 手办">3D</span>` : ''}</span>
           <span class="card__title">${c.title}</span>
         </span>
       </button>

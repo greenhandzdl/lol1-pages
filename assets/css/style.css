@@ -1092,7 +1092,13 @@ button, input, select { font: inherit; color: inherit; }
  * （上面的 dl 已经有边框了，再加一层视觉噪音太大） */
 .detail__traits { margin: 0.1rem 0 0.2rem; }
 .detail__traits:empty { display: none; }
-.detail__traits .traits { max-width: 100%; gap: 6px; }
+/* 弹窗里排两列：竖排六行要 154px，超过第五轮给弹窗定的 +150px 预算，
+ * 而且弹窗本来就矮，这 154px 会把关系列表挤到需要额外滚动。 */
+.detail__traits .traits {
+  max-width: 100%;
+  gap: 5px 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .detail__traits .traits__row { grid-template-columns: 2.9em 1fr; gap: 10px; }
 .detail__traits .traits__name { font-size: 0.72rem; }
 .detail__traits .traits__bar { height: 6px; }
@@ -1420,6 +1426,28 @@ body.is-locked { overflow: hidden; }
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+}
+
+/* 宽屏：点阵和卡片左右并排。
+ *
+ * 原来点阵单独占一行，把 #regions 从 643px 撑到 1054px —— 首页总高
+ * 从 7550 涨到 8144，超出第五轮给自己定的"增幅 ≤80px"预算 514px。
+ * 并排之后点阵的高度被卡片列吸收，几乎不增加页面长度。 */
+.regions__split {
+  display: grid;
+  gap: clamp(1.2rem, 2.4vw, 2rem);
+  align-items: start;
+}
+@media (min-width: 1040px) {
+  /* 0.7/1.3 是为了让 12 张卡片仍然排成 2 行（6 列）——
+   * 排成 3 行的话卡片列会变成整个 #regions 的高度基准，
+   * 点阵再矮也没用，首页反而更高。 */
+  .regions__split {
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  }
+  .regions__split .regions {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  }
 }
 
 /* 每个地名用该角色自己的两色做底，12 个格子天然就是 12 种颜色。
@@ -2060,9 +2088,9 @@ html::after {
  * 四五屏，而 visitor 大多数时候只是想知道"谁和谁有什么关系"。
  */
 .webStory {
-  margin-top: 1.6rem;
+  margin-top: 0.9rem;
   border-top: 1px solid var(--line);
-  padding-top: 1rem;
+  padding-top: 0.7rem;
 }
 .webStory > summary {
   cursor: pointer;
@@ -2133,7 +2161,7 @@ html::after {
   align-items: baseline;
   gap: 0.9rem;
   flex-wrap: wrap;
-  padding: 0.85rem 0 0.85rem;
+  padding: 0.7rem 0 0.7rem;
   max-width: var(--max);
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 2rem);
@@ -2242,4 +2270,84 @@ html::after {
 at media (max-width: 560px) {
   .rmap__canvas { aspect-ratio: auto; height: 260px; }
   .rmap__dot span { font-size: 0.62rem; }
+}
+
+/* ---------- 卡片角落的 3D 标记（批次 P1）----------
+ * 之前读者只能点进 /3d/ 才知道谁是手办、谁还是立牌。这个角标把
+ * "她有 3D" 提到图鉴上，点角标直接进 /3d/?id=xxx，不用先开档案再找入口。
+ * 只有配了模型的角色才有 —— 12 个里 12 个都有，但条件是数据驱动的，
+ * 以后加了没有模型的角色也不会出现空角标。
+ */
+/* 卡片上的「3D」小标签。
+ *
+ * 位置换过两次：右下会被悬停提示「翻开她的档案 →」盖住，
+ * 右上被收藏按钮的心形盖住。最后放进名字那一行 ——
+ * 那里本来就空着，而且"这个人有 3D"本来就是一条信息，不是装饰。
+ *
+ * 也不放模型缩略图：20px 的浅色低多边形在浅色卡片上像一团污渍，认不出是人。 */
+.card__model {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink) 16%, transparent);
+  color: var(--pink-ink);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  vertical-align: 0.15em;
+}
+
+/* ---------- 六维性格（批次 N）----------
+ *
+ * traits 早就存在于 characters.json，但一直只当余弦相似度的中间变量，
+ * 界面上一次都没出现过。这里把它画成六根条。
+ *
+ * 不用雷达图：分值只有 1/2/3 三档，画成多边形会暗示"有更细的精度"，
+ * 那是编出来的分辨率。条长只表达"强/中/弱"，和数据的粒度一致。
+ * 不印数字：1/2/3 印在边上，这一块就变成表格了。
+ */
+/* 六根条竖着排要 165px，占掉角色页一整屏之外的一大块。
+ * 宽屏上排成 3 列 × 2 行（53px）—— 六个维度之间是并列关系，
+ * 分成两行读不会有任何歧义。窄屏仍然一列，横向空间不够时排队比挤好。 */
+.traits {
+  display: grid;
+  gap: 9px 22px;
+  max-width: 380px;
+}
+@media (min-width: 720px) {
+  .traits {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+  }
+}
+.traits__row {
+  display: grid;
+  grid-template-columns: 3.2em 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.traits__name {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-2, var(--ink));
+}
+.traits__bar {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line-2, var(--line));
+  overflow: hidden;
+}
+.traits__bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--pa, var(--pink)), var(--pb, var(--pink-2)));
+  /* 三档之间长度差 33%，不做缓动的话读起来像"跳"，加一点点 */
+  transition: width 0.5s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .traits__bar > i { transition: none; }
 }

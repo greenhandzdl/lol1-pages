@@ -13,12 +13,19 @@ def _save(page):
 
 def test_migrates_legacy_keys(server, page):
     """旧的 lol1:favs / lol1:starhunt 要自动搬家，然后删掉。"""
-    page.goto(BASE + "/?v=mig1", wait_until="domcontentloaded")
+    # 在 404 页上种旧键，不要在首页种。
+    # 之前是 goto(首页, domcontentloaded) 之后立刻 evaluate —— 但 main.js 可能
+    # 已经跑起来了，它会读一次 store 并写出一份空的 lol1:save，
+    # 于是 mig2 看到"存档已存在"就不再迁移，favs 是空的。
+    # 这个竞态在整套跑的时候偶尔命中，单跑必过 —— 典型的 flaky。
+    # 404 页只加载主题脚本，不碰 store，种完再进首页就不会抢。
+    page.goto(BASE + "/404.html", wait_until="domcontentloaded")
     page.evaluate("""() => {
         localStorage.clear();
         localStorage.setItem('lol1:favs', JSON.stringify(['sakura', 'mio']));
         localStorage.setItem('lol1:starhunt', '27');
     }""")
+    assert page.evaluate("() => localStorage.getItem('lol1:favs')") is not None
     page.goto(BASE + "/?v=mig2", wait_until="networkidle")
     page.wait_for_timeout(900)
 

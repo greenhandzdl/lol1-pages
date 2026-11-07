@@ -557,50 +557,6 @@ a.tag--theme {
 }
 [data-theme="dark"] .quotes li { border-left-color: var(--pa-glow); }
 
-/* ---------- 六维性格（批次 N）----------
- *
- * traits 早就存在于 characters.json，但一直只当余弦相似度的中间变量，
- * 界面上一次都没出现过。这里把它画成六根条。
- *
- * 不用雷达图：分值只有 1/2/3 三档，画成多边形会暗示"有更细的精度"，
- * 那是编出来的分辨率。条长只表达"强/中/弱"，和数据的粒度一致。
- * 不印数字：1/2/3 印在边上，这一块就变成表格了。
- */
-.traits {
-  display: grid;
-  gap: 9px;
-  max-width: 380px;
-}
-.traits__row {
-  display: grid;
-  grid-template-columns: 3.2em 1fr;
-  align-items: center;
-  gap: 12px;
-}
-.traits__name {
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  color: var(--ink-2, var(--ink));
-}
-.traits__bar {
-  position: relative;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--line-2, var(--line));
-  overflow: hidden;
-}
-.traits__bar > i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--pa, var(--pink)), var(--pb, var(--pink-2)));
-  /* 三档之间长度差 33%，不做缓动的话读起来像"跳"，加一点点 */
-  transition: width 0.5s var(--ease);
-}
-@media (prefers-reduced-motion: reduce) {
-  .traits__bar > i { transition: none; }
-}
-
 /* 性格标签：只取满分（3）的维度，用在弹窗和卡片这种窄地方 */
 .traitTag {
   display: inline-block;

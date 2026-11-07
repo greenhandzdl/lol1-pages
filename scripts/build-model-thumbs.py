@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "img" / "models"
 PORT = 8791
-SIZE = 420  # 渲染尺寸。显示只有 128px，留 3 倍给高分屏
+SIZE = 176  # 输出尺寸。界面上最大显示 96px（3D 选人栏），176 够 2 倍屏
 
 only = [a for a in sys.argv[1:] if not a.startswith("-")]
 
@@ -111,7 +111,7 @@ def main():
                 img = img.resize((SIZE, SIZE), Image.LANCZOS)
                 # 模型是单色的低多边形，256 色调色板完全够用；
                 # RGBA 直存约 400KB/张，量化后约 40KB
-                img = img.quantize(colors=256, method=Image.FASTOCTREE)
+                img = img.quantize(colors=128, method=Image.FASTOCTREE)
                 img.save(OUT / f"{c['id']}.png", optimize=True)
                 page.close()
                 print(f"  {c['id']}.png")
@@ -122,8 +122,8 @@ def main():
     files = sorted(OUT.glob("*.png"))
     total = sum(f.stat().st_size for f in files)
     print(f"\n{len(files)} 张，合计 {round(total / 1024)}KB")
-    if total > 400 * 1024:
-        print("⚠ 合计超过 400KB，考虑把 SIZE 调小")
+    if total > 150 * 1024:
+        print("⚠ 合计超过 150KB，考虑把 SIZE 调小")
     return 0
 
 

@@ -45,6 +45,21 @@ export class StageControls {
     this._pinch = null;
 
     this._bind();
+    this._homeYaw = this.targetYaw;
+  }
+
+  /**
+   * 回到初始角度。
+   *
+   * 拖了半天转到背面之后，原来没有任何办法回到正面 —— 只能朝着反方向
+   * 再拖同样多，而拖多少算"回正"全靠手感。双击一下更符合直觉。
+   */
+  reset() {
+    this.targetYaw = this._homeYaw;
+    this.targetPitch = 0;
+    this.targetZoom = 1;
+    this.velocity = 0;
+    this.onChange?.();
   }
 
   _bind() {
@@ -129,6 +144,13 @@ export class StageControls {
       if (wasTap) this.onTap?.(e);
     };
 
+    // 双击回正。用 dblclick 而不是自己数两次点击：
+    // 浏览器已经处理了"两次点击间隔多长算双击"，移动端也会把它合成过来。
+    this._onDblClick = () => {
+      if (this.enabled) this.reset();
+    };
+    c.addEventListener('dblclick', this._onDblClick);
+
     c.addEventListener('pointerdown', this._onDown);
     c.addEventListener('pointermove', this._onMove, { passive: true });
     c.addEventListener('pointerup', this._onUp);
@@ -210,6 +232,7 @@ export class StageControls {
 
   dispose() {
     const c = this.canvas;
+    c.removeEventListener('dblclick', this._onDblClick);
     c.removeEventListener('pointerdown', this._onDown);
     c.removeEventListener('pointermove', this._onMove);
     c.removeEventListener('pointerup', this._onUp);

@@ -141,3 +141,239 @@ def test_quiz_comparison_bars_have_length(server, page):
     )
     assert len(bars) == 6, f"应该有 3 行 × 2 条，实际 {len(bars)}"
     assert all(w > 10 for w in bars), f"有条宽度接近 0（样式没加载？）：{bars}"
+
+
+def _swipe(page, selector, dx, ms=200):
+    """在某个元素上派发一次合成的横向触摸滑动。
+
+    Playwright 的 touchscreen 只有 tap，滑动得自己造 TouchEvent。
+    用真实的 target 元素，这样 closest('.stage__canvas') 的判断才会生效。
+    """
+    page.evaluate(
+        """([sel, dx, ms]) => {
+            const t0 = performance.now();
+            const start = t0;
+            const el = document.querySelector(sel);
+            const r = el.getBoundingClientRect();
+            const cy = r.top + r.height / 2;
+            const x0 = r.left + r.width / 2;
+            const mk = (type, x) => {
+                const t = new Touch({
+                    identifier: 1, target: el, clientX: x, clientY: cy,
+                    pageX: x, pageY: cy,
+                });
+                return new TouchEvent(type, {
+                    touches: type === 'touchend' ? [] : [t],
+                    targetTouches: type === 'touchend' ? [] : [t],
+                    changedTouches: [t],
+                    bubbles: true, cancelable: true,
+                });
+            };
+            el.dispatchEvent(mk('touchstart', x0));
+            el.dispatchEvent(mk('touchmove', x0 + dx / 2));
+            el.dispatchEvent(mk('touchend', x0 + dx));
+        }""",
+        [selector, dx, ms],
+    )
+
+
+def test_swipe_on_canvas_does_not_change_character(server, page):
+    """在手办台上转视角，不能把人换掉。
+
+    这是真出过的 bug：canvas 铺满 viewport，横拖是**旋转视角**，
+    但触摸滑动的处理器没判断手势从哪开始 —— 想转个角度看背面，
+    人就被换成了下一个。横拖 70px 很容易达到，而转一圈常常拖 100px 以上。
+
+    键盘那条路径一直有 closest('.stage__canvas') 的检查，触摸这里漏了。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    before = page.locator("#stage-name").inner_text().strip()
+    _swipe(page, ".stage__canvas", -120)
+    page.wait_for_timeout(1200)
+    after = page.locator("#stage-name").inner_text().strip()
+
+    assert after == before, f"转视角时换了人：{before} → {after}"
+
+
+def test_swipe_outside_canvas_still_changes_character(server, page):
+    """修过头也是 bug：canvas 之外横滑，还是得能换人。
+
+    注意滑动目标必须在 #viewport 里面 —— 侧栏 .stage__panel 是它的兄弟节点，
+    事件根本到不了监听器。viewport 里除 canvas 之外的可点区域是 .stage__hint。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    before = page.locator("#stage-name").inner_text().strip()
+    _swipe(page, ".stage__hint", -160)
+    page.wait_for_timeout(1400)
+    after = page.locator("#stage-name").inner_text().strip()
+
+    assert after != before, f"canvas 外横滑没有换人（{before} → {after}）"
+
+
+def _glb_requests(page, record):
+    return [u.split("/")[-1] for u in record if u.endswith(".glb")]
+
+
+def test_revisiting_a_model_does_not_refetch(server, page):
+    """看过的模型不该重新下载。
+
+    原先每换一次人都 loadAsync 一遍：从 sakura 切走再切回来，
+    220-470KB 的模型又下载、又解析一次。模型体积不小（合计 3.6MB），
+    来回比较几个人是常见动作。
+    """
+    glbs = []
+    page.on("request", lambda r: glbs.append(r.url) if r.url.endswith(".glb") else None)
+
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+    first = page.locator("#stage-name").inner_text().strip()
+    first_file = _glb_requests(page, glbs)[0]
+    n = len(glbs)
+
+    page.locator("#next-btn").click()
+    page.wait_for_timeout(1800)
+    page.locator("#prev-btn").click()
+    page.wait_for_timeout(1800)
+
+    assert page.locator("#stage-name").inner_text().strip() == first, "没切回第一个人"
+    again = [g for g in _glb_requests(page, glbs[n:]) if g == first_file]
+    assert not again, f"切回来时又下载了一次 {first_file}"
+
+
+def test_model_cache_is_bounded(server, page):
+    """缓存要有上限 —— 12 个模型全常驻会吃掉大量显存。
+
+    这条只验证"没泄漏"：连切很多人之后，往回走会重新下载
+    （说明老条目被淘汰了）。若缓存无上限，往回走应该一次都不下载。
+    """
+    glbs = []
+    page.on("request", lambda r: glbs.append(r.url) if r.url.endswith(".glb") else None)
+
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    # 往后走 8 个人
+    for _ in range(8):
+        page.locator("#next-btn").click()
+        page.wait_for_timeout(1100)
+    n = len(glbs)
+
+    # 再往回走 6 个人：如果缓存无上限，这里一个新请求都不该有
+    for _ in range(6):
+        page.locator("#prev-btn").click()
+        page.wait_for_timeout(1100)
+
+    refetched = _glb_requests(page, glbs[n:])
+    assert refetched, "走了 8 个人再回来，一个模型都没重新下载 —— 缓存可能没有上限"
+
+
+def test_stage_panel_shows_person_details(server, page):
+    """3D 侧栏要有人物向的信息，不能只有元素/地域/标签。
+
+    characters.json 里 likes / dislikes / habit 每个人都有，档案页也早就
+    渲染了，但手办台的侧栏一直没展示 —— 切换人物时看完三行属性就没东西了。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    likes = page.locator("#stage-likes").inner_text().strip()
+    dislikes = page.locator("#stage-dislikes").inner_text().strip()
+    habit = page.locator("#stage-habit").inner_text().strip()
+
+    assert likes and likes != "—", f"喜欢没渲染出来：{likes!r}"
+    assert dislikes and dislikes != "—", f"不喜欢没渲染出来：{dislikes!r}"
+    assert habit, "小习惯没渲染出来"
+
+    # 换一个人，这几行要跟着换 —— 写死一次也会让上面几条通过
+    page.locator("#next-btn").click()
+    page.wait_for_timeout(1500)
+    assert page.locator("#stage-likes").inner_text().strip() != likes, "换人后「喜欢」没变"
+
+
+def test_stage_person_details_match_data(server, page):
+    """侧栏显示的内容要和 characters.json 一致，不能是编的。"""
+    import json
+
+    data = json.loads(open("assets/data/characters.json", encoding="utf-8").read())
+    by_name = {c["name"]: c for c in data["characters"]}
+
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    for _ in range(4):
+        name = page.locator("#stage-name").inner_text().strip()
+        ch = by_name[name]
+        got = page.locator("#stage-likes").inner_text().strip()
+        want = " · ".join(ch["likes"])
+        assert got == want, f"{name} 的喜欢显示成 {got!r}，应为 {want!r}"
+        assert page.locator("#stage-habit").inner_text().strip() == ch["habit"]
+        page.locator("#next-btn").click()
+        page.wait_for_timeout(1200)
+
+
+def test_double_click_resets_the_view(server, page):
+    """拖到背面之后，双击应该回到正面。
+
+    原来没有任何回正的办法 —— 只能朝反方向再拖同样多，拖多少算"回正"
+    全靠手感。双击是这类视图的惯例（Google Maps、各种 3D 查看器都是）。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    canvas = page.locator(".stage__canvas")
+    home = canvas.screenshot()
+
+    # 转一下
+    box = canvas.bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.move(cx, cy)
+    page.mouse.down()
+    for i in range(10):
+        page.mouse.move(cx + i * 20, cy)
+    page.mouse.up()
+    page.wait_for_timeout(1200)
+
+    assert canvas.screenshot() != home, "拖动没有改变视角，这条测试就没意义了"
+
+    canvas.dblclick(position={"x": 200, "y": 300})
+    page.wait_for_timeout(1500)
+    assert canvas.screenshot() == home, "双击没有回到初始视角"
+
+
+def test_swapping_adds_a_transition_but_first_load_does_not(server, page):
+    """换人时要有过渡，首次加载时不要。
+
+    原来换人是硬切，上一秒一个人、下一秒另一个人，像页面闪了一下。
+    但首次加载不能也加这个 —— 模型本来就在淡入，再叠一层会闪两下。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    canvas = page.locator(".stage__canvas")
+    assert "is-swapping" not in (canvas.get_attribute("class") or ""), "首次加载就播了换人动画"
+
+    page.locator("#next-btn").click()
+    page.wait_for_timeout(300)
+    assert "is-swapping" in (canvas.get_attribute("class") or ""), "换人时没有过渡"
+
+
+def test_transition_respects_reduced_motion(server, page, browser):
+    """开了减少动效就不该再有这个动画。"""
+    ctx = browser.new_context(
+        viewport={"width": 1280, "height": 900},
+        reduced_motion="reduce",
+    )
+    p2 = ctx.new_page()
+    p2.goto(f"{BASE}/3d/", wait_until="networkidle")
+    p2.wait_for_timeout(2500)
+    p2.locator("#next-btn").click()
+    p2.wait_for_timeout(400)
+    name = p2.evaluate(
+        "() => getComputedStyle(document.querySelector('.stage__canvas')).animationName"
+    )
+    assert name == "none", f"减少动效下仍有动画：{name}"
+    ctx.close()

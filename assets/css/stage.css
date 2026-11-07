@@ -100,6 +100,23 @@
   border-radius: var(--radius);
 }
 
+/* 换人时的一点过渡。
+   原来是硬切：上一秒还站着一个人，下一秒就换成另一个，中间没有任何提示，
+   像页面闪了一下。这里让新的先淡进来（幅度很小，也不位移），
+   给眼睛一个"换人了"的信号。
+   用 CSS 动画而不是 three.js 里的透明度：着色用的才是同一套材质，
+   从材质上下手会影响立牌模式（那条路径根本没用 three 的模型）。 */
+.stage__canvas.is-swapping {
+  animation: stage-swap 260ms var(--ease);
+}
+@keyframes stage-swap {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage__canvas.is-swapping { animation: none; }
+}
+
 .stage__hint {
   position: absolute;
   left: 50%;
@@ -266,6 +283,48 @@
   margin: 0 0 16px;
   font-size: 0.74rem;
   color: var(--ink-3);
+}
+
+/* 人物向的几行（喜欢 / 不喜欢 / 小习惯）。
+   和上面的「元素/地域/标签」用同一种排版，但那组是属性、这组是人，
+   所以中间加一条细线分开，别糊成六行一样的 dt/dd。 */
+.stage__meta--person {
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  /* 上面那组是 flex + dt 固定 3.2em，够放「标签」「元素」两个字。
+     这一组的内容会折行（喜欢的东西本来就长），flex 下第二行会回到
+     dt 列的开头，和标签挤在一起。改成 grid 两列，折行后与第一行左对齐。 */
+  display: grid;
+  grid-template-columns: 4.2em 1fr;
+  column-gap: 10px;
+  row-gap: 10px;
+  align-items: baseline;
+}
+.stage__meta--person div {
+  display: contents;
+}
+.stage__meta--person dt {
+  flex: none;
+  white-space: nowrap;
+}
+.stage__meta--person dd {
+  line-height: 1.7;
+}
+.stage__habit {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+  padding-left: 0.7em;
+  border-left: 2px solid var(--pa, var(--pink));
+}
+.stage__habit[hidden] { display: none; }
+
+@media (max-width: 560px) {
+  /* 窄屏侧栏本来就长，这两行再占满会把缩略图和按钮推到很下面 */
+  .stage__meta--person dd { font-size: 0.78rem; }
+  .stage__habit { font-size: 0.78rem; }
 }
 
 .stage__actions {

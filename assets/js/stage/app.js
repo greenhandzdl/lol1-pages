@@ -55,8 +55,21 @@ function paintAccent(ch) {
   root.style.setProperty('--pa-ink', vars['--pa-ink']);
 }
 
-function paintPanel(ch, hasModel) {
+/**
+ * @param {boolean} swap 是不是"换人"。进页面预填面板时传 false ——
+ *   那时模型还在淡入，再叠一个切换动画会闪两下。
+ */
+function paintPanel(ch, hasModel, swap = false) {
   paintAccent(ch);
+
+  // 换人的过渡：重新触发一次动画（同一个类名连加两次不会重播）
+  const cv = $('.stage__canvas');
+  if (swap && cv && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    cv.classList.remove('is-swapping');
+    void cv.offsetWidth; // 强制回流，让动画能从头上再放一次
+    cv.classList.add('is-swapping');
+  }
+
   $('#stage-region').textContent = `${ch.region} · ${ch.element}`;
   $('#stage-name').textContent = ch.name;
   $('#stage-title').textContent = `${ch.nameEn} · ${ch.title}`;
@@ -67,6 +80,16 @@ function paintPanel(ch, hasModel) {
   $('#stage-credit').textContent = hasModel
     ? `${ch.modelCredit || 'AI 生成几何'} · 素色手办着色`
     : '3D 模型还在赶工，先用立牌模式陪你玩';
+
+  // 人物向的几行。数据在 characters.json 里一直有，只是侧栏没展示过。
+  // 用 · 分隔而不是换行，窄屏下侧栏不会因为这几行被撑长。
+  const liked = Array.isArray(ch.likes) ? ch.likes.filter(Boolean) : [];
+  const disliked = Array.isArray(ch.dislikes) ? ch.dislikes.filter(Boolean) : [];
+  $('#stage-likes').textContent = liked.length ? liked.join(' · ') : '—';
+  $('#stage-dislikes').textContent = disliked.length ? disliked.join(' · ') : '—';
+  $('#stage-habit').textContent = ch.habit || '';
+  // 没写小习惯的角色别留一个空段落占位
+  $('#stage-habit').hidden = !ch.habit;
 
   const fallback = $('#fallback-img');
   if (fallback) {
@@ -137,8 +160,8 @@ async function init() {
   const viewer = new Viewer($('#viewport'), state.all);
   state.viewer = viewer;
   viewer.onFallback = () => setState('fallback');
-  viewer.onChange = (c, hasModel) => {
-    paintPanel(c, hasModel);
+  viewer.onChange = (c, hasModel, swap) => {
+    paintPanel(c, hasModel, swap);
     const i = state.all.findIndex((x) => x.id === c.id);
     if (i >= 0) state.index = i;
   };
@@ -187,18 +210,66 @@ async function init() {
     if (e.key === 'ArrowRight') go(1);
   });
 
-  // 触屏左右滑动切换（竖向留给页面滚动）
-  let sx = 0, sy = 0;
+  /* 触屏左右滑动切换（竖向留给页面滚动）
+
+     这里踩过一个坑：canvas 铺满 viewport，但 canvas 上的横拖是**旋转视角**。
+     原来 this 段没有「手势从哪开始」的判断，于是想转个角度看背面，人就被
+     换掉了 —— 横拖 70px 很容易达到，而旋转视角一次就拖 100px 以上。
+     上一行的键盘处理有 `e.target.closest('.stage__canvas')` 的检查，
+     触摸这里漏了，同一个问题只防住了一半。
+
+     现在四条一起挡：
+       1. 起点在 canvas 上 → 整个手势不参与换人（那是旋转的活）
+       2. 双指（pinch 缩放）→ 不参与
+       3. 小游戏进行中 → 不参与（点星星会误触）
+       4. 必须"快"：慢速大位移多半是想转视角，判成滑动会误伤
+     阈值也从 70px 提到视口宽度的 1/5（窄屏下限 90px），
+     顺带把 touchend 改成在 touchmove 里累积 —— touchend 时再算位移
+     拿不到中间过程，无法区分"慢慢拖"和"甩一下"。 */
+  const SWIPE_MIN = () => Math.max(90, Math.min(160, window.innerWidth * 0.2));
+  const SWIPE_MS = 600; // 超过这么久才算滑动就太慢了，当作旋转
+  let sx = 0, sy = 0, st = 0;
+  let armed = false; // 这次手势是否允许判成换人
+
   const vp = $('#viewport');
-  vp.addEventListener('touchstart', (e) => {
-    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-  }, { passive: true });
-  vp.addEventListener('touchend', (e) => {
-    const t = e.changedTouches[0];
-    const dx = t.clientX - sx;
-    const dy = t.clientY - sy;
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) go(dx < 0 ? 1 : -1);
-  }, { passive: true });
+  vp.addEventListener(
+    'touchstart',
+    (e) => {
+      armed = false;
+      if (e.touches.length !== 1) return; // 双指留给缩放
+      if (state.game?.running) return;
+      // 起点在 canvas 上 → 是想转视角
+      if (e.target.closest?.('.stage__canvas')) return;
+      const t = e.touches[0];
+      sx = t.clientX;
+      sy = t.clientY;
+      st = Date.now();
+      armed = true;
+    },
+    { passive: true },
+  );
+
+  vp.addEventListener(
+    'touchend',
+    (e) => {
+      if (!armed) return;
+      armed = false;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
+      const dt = Date.now() - st;
+      const min = SWIPE_MIN();
+      if (dt > SWIPE_MS) return; // 太慢：当旋转
+      if (Math.abs(dx) < min) return; // 不够远
+      if (Math.abs(dx) < Math.abs(dy) * 1.6) return; // 竖向为主：留给页面滚动
+      go(dx < 0 ? 1 : -1);
+    },
+    { passive: true },
+  );
+
+  // 手指抬起一半又按下去（多指）时，别把上一次的 armed 留在那儿
+  vp.addEventListener('touchcancel', () => { armed = false; }, { passive: true });
 
   // 小游戏懒加载：只有点了才开始
   $('#game-btn').addEventListener('click', async () => {

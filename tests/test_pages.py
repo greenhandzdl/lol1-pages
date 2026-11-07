@@ -447,15 +447,6 @@ def test_quote_strip_on_home(server, page):
     assert first.strip() == second.strip(), "同一天两次打开读到的不一样"
 
 
-def test_region_map_does_not_pretend_to_be_a_map(server, page):
-    """点阵说明里必须写明「方位是相对的」，否则它就是一张假地图。"""
-    page.goto(BASE + "/", wait_until="networkidle")
-    cap = page.evaluate(
-        "() => document.querySelector('.rmap__cap')?.textContent || ''"
-    )
-    assert "不是道路" in cap and "相对" in cap, f"点阵说明不合格: {cap!r}"
-
-
 def test_model_thumbs_exist_for_all_models(server):
     """每个有 glb 的角色都要有一张缩略图 —— 少一张就是页面上一个破图。"""
     import json

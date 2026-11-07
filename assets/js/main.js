@@ -5,7 +5,6 @@ import { pickOfDay, lineOfDay, suggestOfDay, quoteOfDay } from './daily.js';
 import { glyphSvg } from './glyphs.js';
 import { accentStyle } from './accent.js';
 import { traitBars } from './traits.js';
-import { regionMap } from './regions.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -162,30 +161,6 @@ function renderRegions() {
     renderGrid();
     document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-
-  // 点阵放在卡片上方：先给"这些地方大概在哪"，再给"每个地方叫什么"
-  const mapHost = $('#regions-map');
-  if (mapHost && !mapHost.dataset.done) {
-    mapHost.innerHTML = regionMap(state.all);
-    mapHost.dataset.done = '1';
-    mapHost.addEventListener('click', (e) => {
-      const dot = e.target.closest('.rmap__dot');
-      if (!dot) return;
-      const c = byId(dot.dataset.id);
-      if (c) pickRegion(c);
-    });
-    // 悬停时把对应的卡片也点亮，反过来也一样
-    mapHost.addEventListener('mouseover', (e) => {
-      const dot = e.target.closest('.rmap__dot');
-      if (!dot) return;
-      $$('#regions-grid .region').forEach((b) =>
-        b.classList.toggle('is-hot', b.dataset.id === dot.dataset.id),
-      );
-    });
-    mapHost.addEventListener('mouseout', () => {
-      $$('#regions-grid .region').forEach((b) => b.classList.remove('is-hot'));
-    });
-  }
 
   host.innerHTML = state.all
     .map(

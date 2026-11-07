@@ -362,6 +362,10 @@
   display: grid;
   gap: 10px;
   margin-top: 4px;
+  /* 下面这三个按钮属于 .quiz__card 的 grid，行间距是从 card 的 gap 来的，
+     但 .traitCmp 自己的内容（最后一行条）正好压在卡片内容区底边上，
+     视觉上像被按钮裁掉了。留一点底边距，按钮才不像"盖住"了最后一行。 */
+  margin-bottom: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
 }

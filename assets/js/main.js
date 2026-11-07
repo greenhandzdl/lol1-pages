@@ -1,5 +1,6 @@
 /* lol1.moe · 萝莉图鉴 — vanilla ES module */
 import { collapseNav } from './nav-collapse.js';
+import { spyNav } from './nav-spy.js';
 import { store, todayKey } from './store.js';
 import { pickOfDay, lineOfDay, suggestOfDay, quoteOfDay } from './daily.js';
 import { glyphSvg } from './glyphs.js';
@@ -1003,6 +1004,8 @@ function petals() {
 
 async function init() {
   collapseNav();
+  // 导航栏标出「你现在在哪一段」——只管本页的 #gallery/#regions/#about/#policy
+  spyNav();
   loadFavs();
   const deepLink = readURL();
 

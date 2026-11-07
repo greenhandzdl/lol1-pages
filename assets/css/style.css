@@ -265,6 +265,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 .nav__link {
+  position: relative; /* 给下面的 ::after 下划线定位 */
   display: inline-flex;
   align-items: center;
   min-height: 44px; /* 触控区下限，见 stage.css 同名规则 */
@@ -276,6 +277,78 @@ button, input, select { font: inherit; color: inherit; }
   transition: background 0.25s, color 0.25s;
 }
 .nav__link:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ---------------------------------------------------------------
+   当前所在的位置
+
+   以前 <a aria-current="page"> 写进去了，但没有一条 CSS 用到它 ——
+   属性白写了，导航栏看不出你在哪一页。三件事一起说清楚：
+
+   1. 独立页面（/3d/ /shelf/ /play/）——aria-current="page"
+      长得像一颗按下来的胶囊，和 hover 同一个形状但更实。
+   2. 首页里的某一段（#gallery #regions #about #policy）——
+      由 nav-spy.js 打上 aria-current="true"。它和平级的"另一个页面"
+      不是一回事：换了页面会离开，跳到某一段还在同一页。
+      所以用下划线而不是胶囊底，形状不同就不会被误读。
+   3. 指向"另一页上的某一段"的链接（从 /3d/ 点「图鉴」= /#gallery）——
+      它现在不在这个位置，等跳过去才算。
+   --------------------------------------------------------------- */
+
+/* 1. 当前页面
+   文字用 --ink 而不是 --pink-2：13px 的小字压在 --pink-soft 上，
+   --pink-2 只有 4.55:1，余量太薄。颜色身份靠底色给，不靠字色。 */
+.nav__link[aria-current='page'] {
+  color: var(--ink);
+  background: var(--pink-soft);
+  font-weight: 700;
+}
+[data-theme='dark'] .nav__link[aria-current='page'] {
+  color: var(--pink-ink);
+  background: color-mix(in srgb, var(--pink) 22%, transparent);
+}
+
+/* 2. 首页当前所在的那一段 */
+.nav__link[aria-current='true'] {
+  color: var(--ink);
+  font-weight: 700;
+}
+.nav__link[aria-current='true']::after {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 0.42rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--pink-2);
+}
+[data-theme='dark'] .nav__link[aria-current='true']::after { background: var(--pink-ink); }
+
+/* 页内锚点 vs 独立页面：给"留在本页"的那种一个小记号，
+   让人知道点它不会换页。悬停才出现，平时不吵。 */
+.nav__link--samepage::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--pink-2);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+/* 只在悬停时出现。当前段已经用下划线说明了，再点一个圆点是重复，
+   而且圆点会把文字顶偏 9px —— 同一行里「地域」比邻居宽出来，很难看。 */
+.nav__link--samepage:hover::before { opacity: 0.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav__link--samepage::before { transition: none; }
+}
+
+@media (max-width: 560px) {
+  /* 手机上间距收紧，下划线跟着收 */
+  .nav__link[aria-current='true']::after { left: 0.2rem; right: 0.2rem; bottom: 0.3rem; }
+}
 
 .icon-btn {
   width: 38px;

@@ -1,7 +1,7 @@
 # 测试
 
 ```bash
-npm test          # 全部 204 项（约 5 分钟）
+npm test          # 全部 215 项（约 5 分钟）
 npm run test:fast # 页面冒烟 + 数据校验（约 40 秒）
 npm run test:data # 纯数据，不起浏览器（约 1 秒）
 ```
@@ -27,6 +27,7 @@ npm run test:data # 纯数据，不起浏览器（约 1 秒）
 | `test_contrast.py` | **小字对比度不达标**（像素采样，不用 getComputedStyle —— 它读渐变背景会撒谎）、主按钮白字、暗色主题 accent 掉色、**淡入动画没走完就量** |
 | `test_styles_coverage.py` | **样式写进了这一页不加载的 CSS**、删掉的功能还留着样式 |
 | `test_interaction.py` | **只有点开才出现的组件**（弹窗性格条、关系故事展开、对照条）渲染不全或宽度为 0 |
+| `test_nav.py` | **导航栏看不出你在哪**（`aria-current` 写了但没样式）、滚动高亮不跟手、角色页乱标、页内锚点和独立页面分不开 |
 
 ## 三条踩过的坑
 

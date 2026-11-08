@@ -283,25 +283,59 @@ function renderNow() {
       b.setAttribute('aria-pressed', String(b.dataset.slot === slot));
     });
 
+    const label = NOW_SLOTS.find((s) => s.key === slot).label;
+    const idx = NOW_SLOTS.findIndex((s) => s.key === slot);
+
+    // 取某人在某个时段的那一段日程。
+    // 数据里的 time 是「早晨/白天/傍晚/夜里」，先按文字匹配，
+    // 匹配不到就按下标兜底 —— 以后有人把 time 写成「清晨」也不会整块空掉。
+    const sceneOf = (c) =>
+      (c.day || []).find((d) => String(d.time).includes(label)) || c.day?.[idx] || null;
+
     const paint = () => {
       const item = pickOfDay(state.all, `${todayKey()}::${slot}`);
       if (!item) { host.innerHTML = ''; return; }
-      const entry = (item.day || []).find((d) => String(d.time).includes(NOW_SLOTS.find((s) => s.key === slot).label))
-        || item.day?.[NOW_SLOTS.findIndex((s) => s.key === slot)];
+      const entry = sceneOf(item);
+
+      // 其余的人此刻在做什么。
+      // 这一节的标题是「她们」现在在做什么，但一直只显示一个人 ——
+      // 48 段日程（12 人 × 4 档）里每天只露 1 段。把剩下的列出来，
+      // 标题才成立，也多出五六百字可读。
+      const others = state.all
+        .filter((c) => c.id !== item.id)
+        .map((c) => ({ c, d: sceneOf(c) }))
+        .filter((x) => x.d);
+
+      const rest = others.length
+        ? `<div class="now__rest">
+             <p class="now__restLabel">同一时刻，其他 ${others.length} 位</p>
+             <ul class="now__restList">${others
+               .map(
+                 ({ c, d }) => `<li><a class="now__someone" href="/c/${c.id}/">
+                   <span class="now__someoneAct">${d.title}</span>
+                   <span class="now__someoneName">${c.name}</span>
+                   <span class="now__someoneText">${d.text}</span>
+                 </a></li>`,
+               )
+               .join('')}</ul>
+           </div>`
+        : '';
 
       const stem = item.image.replace(/\.webp$/, '');
-      host.innerHTML = entry
-        ? `<div class="now__face"><img src="${item.image}"
+      host.innerHTML = (entry
+        ? `<div class="now__feature">
+             <div class="now__face"><img src="${item.image}"
                srcset="${stem}-400.webp 400w, ${stem}-600.webp 600w, ${item.image} 768w"
                sizes="132px" width="768" height="1024" loading="lazy" decoding="async"
                alt="${item.name}"></div>
-           <div>
-             <p class="now__time">${NOW_SLOTS.find((s) => s.key === slot).label} · ${entry.title}</p>
-             <p class="now__text">“${entry.text}”</p>
-             <p class="now__meta">${item.name} · ${item.title} · ${item.region} · ${item.element}
-               <a href="/c/${item.id}/" aria-label="看 ${item.name} 的档案">她的档案 →</a></p>
+             <div>
+               <p class="now__time">${label} · ${entry.title}</p>
+               <p class="now__text">“${entry.text}”</p>
+               <p class="now__meta">${item.name} · ${item.title} · ${item.region} · ${item.element}
+                 <a href="/c/${item.id}/" aria-label="看 ${item.name} 的档案">她的档案 →</a></p>
+             </div>
            </div>`
-        : '';
+        : '') + rest;
     };
 
     if (!animate || reducedMotion) { paint(); return; }

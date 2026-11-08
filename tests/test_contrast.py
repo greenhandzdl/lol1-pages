@@ -320,3 +320,20 @@ def test_card_tagline_is_readable(server, page):
     page.wait_for_selector(".card__tagline")
     ratio, dark, light = _measure(page, page.locator(".card__tagline").first)
     assert ratio >= AA_NORMAL, f"卡片台词 {ratio:.2f}:1 (字{dark} 底{light})"
+
+
+def test_now_other_residents_are_readable(server, page):
+    """「同一时刻其他 11 位」那几行要读得清。
+
+    它们是新加的正文，量法和别处一样：截图取最暗/最亮像素。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_selector(".now__someoneText")
+
+    for sel, label in (
+        (".now__someoneAct", "活动名"),
+        (".now__someoneText", "日程正文"),
+        (".now__restLabel", "小标题"),
+    ):
+        ratio, dark, light = _measure(page, page.locator(sel).first)
+        assert ratio >= AA_NORMAL, f"{label} {ratio:.2f}:1 (最暗{dark} 最亮{light})"

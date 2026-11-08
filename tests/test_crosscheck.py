@@ -172,3 +172,51 @@ def test_now_slot_follows_local_clock(server, page):
             "() => document.querySelector('.now__btn[aria-pressed=\"true\"]').dataset.slot"
         )
         assert got == expect, f"{when} 应该落在 {expect}，实际是 {got}"
+
+
+def test_now_lists_every_resident_not_just_one(server, page):
+    """「她们现在在做什么」要说全 12 位，不能只显示一个人。
+
+    标题写的是"她们"，但原来只显示一位 —— 48 段日程（12 人 × 4 档）
+    每天只露 1 段。现在是她 + 其他 11 位。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(600)
+
+    featured = page.locator("#now-card .now__feature").count()
+    others = page.locator("#now-card .now__someone").count()
+    assert featured == 1, "没有主卡片"
+    assert others == 11, f"其他居民列了 {others} 位，应为 11"
+    assert featured + others == 12, "总人数不是 12"
+
+
+def test_now_others_texts_match_their_own_slot(server, page):
+    """每个人列出来的那段，必须是她自己在这一档的日程。
+
+    容易写错的地方：拿错下标、或者所有人都显示成抽到的那一位的台词。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_timeout(600)
+
+    # 依次点四档，每一档都逐条核对
+    for slot, label in (("morning", "早晨"), ("day", "白天"), ("evening", "傍晚"), ("night", "夜里")):
+        page.click(f'.now__btn[data-slot="{slot}"]')
+        page.wait_for_timeout(450)
+
+        rows = page.evaluate(
+            """() => [...document.querySelectorAll('#now-card .now__someone')].map(a => ({
+                 id: a.getAttribute('href').replace(/\\/c\\/(.+)\\//, '$1'),
+                 act: a.querySelector('.now__someoneAct').textContent.trim(),
+                 text: a.querySelector('.now__someoneText').textContent.trim(),
+               }))"""
+        )
+        assert len(rows) == 11, f"{label} 档只有 {len(rows)} 条"
+
+        wrong = []
+        for row in rows:
+            ch = next(c for c in CHARS if c["id"] == row["id"])
+            d = next((x for x in ch["day"] if label in str(x["time"])), None)
+            assert d is not None, f'{ch["id"]} 缺少 {label} 档'
+            if row["act"] != d["title"] or row["text"] != d["text"]:
+                wrong.append((ch["id"], label, row, d))
+        assert not wrong, f"{label} 档有对不上的: {wrong[:2]}"

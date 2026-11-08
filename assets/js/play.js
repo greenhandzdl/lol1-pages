@@ -12,6 +12,7 @@ import { store } from './store.js';
 import { RegionMatch } from './match.js';
 import { traitBars } from './traits.js';
 import { initTheme } from './theme.js';
+import { mountBgm } from './bgm.js';
 
 const TRAITS = ['温柔', '体贴', '活泼', '安静', '好奇', '独立'];
 
@@ -260,3 +261,4 @@ async function init() {
 
 initTheme();
 init();
+mountBgm();

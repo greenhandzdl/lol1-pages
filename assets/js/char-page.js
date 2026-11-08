@@ -7,6 +7,7 @@
 
 import { collapseNav } from './nav-collapse.js';
 import { store } from './store.js';
+import { mountBgm } from './bgm.js';
 
 const STORE_THEME = 'lol1:theme';
 const root = document.documentElement;
@@ -34,3 +35,5 @@ btn?.addEventListener('click', () => {
   }
   sync();
 });
+
+mountBgm();

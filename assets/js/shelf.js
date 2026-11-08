@@ -10,6 +10,7 @@ import { store } from './store.js';
 import { accentVars, glowFor } from './accent.js';
 import { glyphSvg } from './glyphs.js';
 import { initTheme } from './theme.js';
+import { mountBgm } from './bgm.js';
 
 const state = { all: [], tab: 'all' };
 
@@ -192,3 +193,4 @@ async function init() {
 
 initTheme();
 init();
+mountBgm();

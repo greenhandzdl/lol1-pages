@@ -7,6 +7,7 @@
 import { Viewer, siteURL } from './viewer.js';
 import { accentVars } from '../accent.js';
 import { glyphSvg } from '../glyphs.js';
+import { mountBgm } from '../bgm.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -319,3 +320,4 @@ async function init() {
 }
 
 init();
+mountBgm();

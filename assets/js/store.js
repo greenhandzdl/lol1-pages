@@ -15,6 +15,8 @@
  *   turned 在 3D 台成功加载过模型的 id（和 looked 是两回事：转手办成本更高）
  *   spun  每日一抽的记录 { '2026-11-05': 'sakura' }
  *   stars 寻星最高分 { sakura: 27 }
+ *
+ * 背景音乐开关不在这里 —— 它单独存在 'lol1:bgm' 上，见 getAudio()。
  */
 
 const KEY = 'lol1:save';
@@ -35,7 +37,7 @@ const LEGACY = {
   },
 };
 
-const blank = () => ({ v: VERSION, favs: [], seen: [], turned: [], spun: {}, stars: {}, at: Date.now() });
+const blank = () => ({ v: VERSION, favs: [], seen: [], turned: [], spun: {}, stars: {}, audio: 'off', at: Date.now() });
 
 let cache = null;
 
@@ -142,11 +144,32 @@ export const store = {
     return Math.max(prev, score);
   },
 
+  /**
+   * 背景音乐开关。
+   *
+   * 单独一个键（'lol1:bgm'）而不是塞进存档对象：这段状态要在 <head> 里
+   * 首帧之前读出来，而 store.js 是 ES module，那时还加载不到。
+   * 代价是"清空存档"要顺手把它也清掉 —— 下面 reset() 里做了。
+   */
+  getAudio() {
+    try {
+      return localStorage.getItem('lol1:bgm') === 'on' ? 'on' : 'off';
+    } catch {
+      return 'off';
+    }
+  },
+  setAudio(v) {
+    try {
+      localStorage.setItem('lol1:bgm', v === 'on' ? 'on' : 'off');
+    } catch { /* 无痕模式：只影响这次会话 */ }
+  },
+
   /** 供调试与「清空存档」用 */
   reset() {
     cache = blank();
     try {
       localStorage.removeItem(KEY);
+      localStorage.removeItem('lol1:bgm');
       for (const k of Object.keys(LEGACY)) localStorage.removeItem(k);
     } catch { /* ignore */ }
   },

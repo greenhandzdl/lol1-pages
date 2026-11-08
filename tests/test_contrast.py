@@ -337,3 +337,44 @@ def test_now_other_residents_are_readable(server, page):
     ):
         ratio, dark, light = _measure(page, page.locator(sel).first)
         assert ratio >= AA_NORMAL, f"{label} {ratio:.2f}:1 (最暗{dark} 最亮{light})"
+
+
+# ---------------------------------------------------------------- 背景音乐按钮
+
+# 图标属于 WCAG 1.4.11「非文本对比度」的范畴，门槛是 3:1，不是正文的 4.5:1。
+# 但页头这一排图标本来就偏淡：实测主题按钮在浅色下只有 2.39:1。
+# 所以这里取同排现有图标作为基准 —— 新按钮不该比它们更淡，
+# 否则就是"加了一个看不见的按钮"，而不是"全站图标都不够黑"。
+AA_NON_TEXT = 3.0
+
+
+def _icon_ratio(page, selector):
+    return _measure(page, page.locator(selector))[0]
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_bgm_toggle_is_as_visible_as_its_neighbours(server, page, theme):
+    """开启态换了颜色（--pink-ink），要确认没比旁边那两枚更淡。
+
+    第一版用的是 --pink，实测浅色下只有 1.43:1 —— 比旁白还淡。
+    """
+    page.goto(f"{BASE}/?theme={theme}", wait_until="networkidle")
+    page.wait_for_timeout(600)
+
+    # 暗色下 .sun 是 display:none，亮着的是 .moon
+    sun_or_moon = "svg.moon" if theme == "dark" else "svg.sun"
+    theme_icon = _icon_ratio(page, f"#theme-toggle {sun_or_moon}")
+    off_icon = _icon_ratio(page, "[data-bgm-toggle] svg.bgm-on")
+
+    page.locator("[data-bgm-toggle]").click()
+    page.wait_for_timeout(500)
+    on_icon = _icon_ratio(page, "[data-bgm-toggle] svg.bgm-off")
+
+    # 静音态和主题图标同色，应当几乎一样
+    assert abs(off_icon - theme_icon) < 0.6, (
+        f"{theme}: 静音图标 {off_icon:.2f}:1 与主题图标 {theme_icon:.2f}:1 差太多"
+    )
+    # 开启态是强调色，不能比同排图标淡
+    assert on_icon >= theme_icon * 0.8, (
+        f"{theme}: 开启态只有 {on_icon:.2f}:1，比同排图标 {theme_icon:.2f}:1 还淡"
+    )

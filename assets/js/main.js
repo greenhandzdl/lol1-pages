@@ -5,6 +5,7 @@ import { pickOfDay, lineOfDay, suggestOfDay, quoteOfDay } from './daily.js';
 import { glyphSvg } from './glyphs.js';
 import { accentStyle } from './accent.js';
 import { traitBars } from './traits.js';
+import { mountBgm } from './bgm.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1256,3 +1257,4 @@ function shuffle(arr) {
 }
 
 init();
+mountBgm();

@@ -25,6 +25,9 @@ def test_every_card_dialog_renders_traits(server, page):
     problems = []
     for i in range(total):
         page.locator(".card__body").nth(i).click()
+        page.wait_for_selector("#detail-name")
+        # 性格收在「更多资料」里，默认折叠
+        page.evaluate("document.querySelector('.detail__more').open = true")
         page.wait_for_selector("#detail-traits .traits__row")
         page.wait_for_timeout(200)
         info = page.evaluate(
@@ -53,6 +56,8 @@ def test_dialog_traits_bars_have_nonzero_width(server, page):
     page.goto(f"{BASE}/", wait_until="networkidle")
     page.wait_for_timeout(800)
     page.locator(".card__body").first.click()
+    page.wait_for_selector("#detail-name")
+    page.evaluate("document.querySelector('.detail__more').open = true")
     page.wait_for_selector("#detail-traits .traits__row")
     page.wait_for_timeout(400)
     widths = page.evaluate(
@@ -377,3 +382,259 @@ def test_transition_respects_reduced_motion(server, page, browser):
     )
     assert name == "none", f"减少动效下仍有动画：{name}"
     ctx.close()
+
+
+def test_voice_lines_render_and_cycle(server, page):
+    """台词要显示出来，点一下要换下一句。
+
+    characters.json 里每人写了 3 句台词，12 人 36 句 —— 之前一个页面都没用过。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.locator(".card__body").first.click()
+    page.wait_for_timeout(700)
+
+    first = page.locator("#detail-voice").inner_text().strip()
+    assert first.strip("「」") != "", "弹窗里没有台词"
+
+    page.locator("#detail-voice-next").click()
+    page.wait_for_timeout(400)
+    second = page.locator("#detail-voice").inner_text().strip()
+    assert second != first, f"点「换一句」没换（还是 {first!r}）"
+
+
+def test_voice_matches_data_and_resets_per_person(server, page):
+    """台词要和 json 一致，换人后从第一句重新开始。"""
+    import json
+
+    data = json.loads(open("assets/data/characters.json", encoding="utf-8").read())
+    by_name = {c["name"]: c for c in data["characters"]}
+
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.locator(".card__body").first.click()
+    page.wait_for_timeout(700)
+
+    name = page.locator("#detail-name").inner_text().strip()
+    want = f"「{by_name[name]['voice'][0]}」"
+    got = page.locator("#detail-voice").inner_text().strip()
+    assert got == want, f"{name} 第一句台词是 {got!r}，应为 {want!r}"
+
+    # 翻到第二句，然后换人
+    page.locator("#detail-voice-next").click()
+    page.wait_for_timeout(300)
+    page.keyboard.press("ArrowRight")
+    page.wait_for_timeout(600)
+
+    name2 = page.locator("#detail-name").inner_text().strip()
+    want2 = f"「{by_name[name2]['voice'][0]}」"
+    got2 = page.locator("#detail-voice").inner_text().strip()
+    assert got2 == want2, f"换人后没有重置到第一句：{got2!r}，应为 {want2!r}"
+
+
+def test_voice_announces_changes_to_screen_readers(server, page):
+    """台词变化要能被读屏听到。
+
+    点了按钮但读屏没反应，等于这个功能对读屏用户不存在。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.locator(".card__body").first.click()
+    page.wait_for_timeout(700)
+
+    live = page.locator("#detail-voice").get_attribute("aria-live")
+    assert live in ("polite", "assertive"), f"台词没有 aria-live（{live!r}）"
+
+    stage = page.locator("#stage-voice")
+    if stage.count():
+        live2 = stage.get_attribute("aria-live")
+        assert live2 in ("polite", "assertive"), f"3D 台台词没有 aria-live（{live2!r}）"
+
+
+def test_stage_voice_cycles_and_resets(server, page):
+    """3D 台侧栏的台词同样要能换，换人后回到第一句。"""
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    v1 = page.locator("#stage-voice").inner_text().strip()
+    assert v1.strip("「」"), "3D 台没有台词"
+
+    page.locator("#stage-voice-next").click()
+    page.wait_for_timeout(300)
+    v2 = page.locator("#stage-voice").inner_text().strip()
+    assert v2 != v1, "3D 台点「换一句」没换"
+
+    page.locator("#next-btn").click()
+    page.wait_for_timeout(1500)
+    v3 = page.locator("#stage-voice").inner_text().strip()
+    assert v3 != v2, "换人后台词没变"
+
+
+def test_read_progress_tracks_scroll(server, page):
+    """滚动进度条要跟着走。
+
+    主页在手机上 9.7 屏高（约 8700px），滚到一半完全不知道还剩多少。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+
+    def width():
+        return page.evaluate(
+            "() => parseFloat(document.querySelector('.readbar__fill').style.width) || 0"
+        )
+
+    assert width() == 0, "还没滚，进度条就不是 0"
+
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight / 2)")
+    page.wait_for_timeout(400)
+    mid = width()
+    assert 30 < mid < 75, f"滚到一半时进度是 {mid}%，不合理"
+
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.wait_for_timeout(400)
+    assert width() >= 98, f"滚到底进度只有 {width()}%"
+
+
+def test_back_to_top_appears_only_after_scrolling(server, page):
+    """回到顶部要滚过一屏才出现 —— 一进页面就挂个按钮既挡内容也没意义。"""
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+
+    btn = page.locator("#to-top")
+    assert btn.is_hidden(), "还没滚就显示了回到顶部"
+
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight / 2)")
+    page.wait_for_timeout(400)
+    assert btn.is_visible(), "滚了半页还没出现回到顶部"
+
+    btn.click()
+    page.wait_for_timeout(1500)
+    assert page.evaluate("window.scrollY") == 0, "点了没有回到顶部"
+    assert btn.is_hidden(), "回到顶部后按钮应该收起来"
+
+
+def test_back_to_top_is_keyboard_operable(server, page):
+    """只能用鼠标点的按钮，对键盘用户等于不存在。"""
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight / 2)")
+    page.wait_for_timeout(400)
+
+    page.locator("#to-top").focus()
+    assert page.evaluate("() => document.activeElement.id") == "to-top", "按钮获得不了焦点"
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(1500)
+    assert page.evaluate("window.scrollY") == 0, "键盘回车没有回到顶部"
+
+
+def test_stage_panel_has_accent_band(server, page):
+    """侧栏顶部要有当前角色的色带。
+
+    12 个人各有配色，但侧栏永远是同一种底色 —— 换成谁看起来都差不多。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    band = page.evaluate(
+        "() => getComputedStyle(document.querySelector('.stage__panel'), '::before').backgroundImage"
+    )
+    assert "gradient" in band, f"侧栏顶部没有色带：{band!r}"
+
+    # 换人之后色带要跟着换
+    first = band
+    page.locator("#next-btn").click()
+    page.wait_for_timeout(1500)
+    second = page.evaluate(
+        "() => getComputedStyle(document.querySelector('.stage__panel'), '::before').backgroundImage"
+    )
+    assert second != first, "换人后色带没变"
+
+
+def test_panel_text_fades_on_swap_but_not_on_load(server, page):
+    """换人时侧栏文字淡一下，首次加载不淡。"""
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    panel = page.locator(".stage__panel")
+    assert "is-swapping" not in (panel.get_attribute("class") or ""), "首次加载就淡入了"
+
+    page.locator("#next-btn").click()
+    page.wait_for_timeout(200)
+    assert "is-swapping" in (panel.get_attribute("class") or ""), "换人时侧栏没有淡入"
+
+
+def test_pitch_has_soft_limit(server, page):
+    """俯仰拖到头时是渐进的，不是硬撞墙。
+
+    直接 clamp 的手感是"手还在动、画面不动"，像卡了一下。
+    """
+    page.goto(f"{BASE}/3d/", wait_until="networkidle")
+    page.wait_for_timeout(2500)
+
+    canvas = page.locator(".stage__canvas")
+    box = canvas.bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+
+    # 往上猛拖，远超俯仰上限
+    page.mouse.move(cx, cy)
+    page.mouse.down()
+    for i in range(25):
+        page.mouse.move(cx, cy - i * 20)
+        page.wait_for_timeout(8)
+    page.mouse.up()
+    page.wait_for_timeout(800)
+
+    # 角度必须被限住（不然就是没做限制），但过程中不能抛异常、页面不能坏
+    assert page.locator(".stage__canvas").is_visible()
+    err = page.evaluate("() => window.__lastError || null")
+    assert err is None, f"拖动过程中报错了：{err}"
+
+
+def test_dialog_folds_reference_info(server, page):
+    """弹窗把「查资料时才要的」收起来，默认不展开。
+
+    加了台词之后弹窗内容 1272px，而手机视口才 844px。但真正要看的是
+    "她是谁 / 她说什么 / 她的故事"，画师/授权/性格/关系是查资料时才翻的。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.locator(".card__body").first.click()
+    page.wait_for_timeout(800)
+
+    more = page.locator(".detail__more")
+    assert more.count() == 1, "弹窗里没有分层"
+    assert not more.evaluate("e => e.open"), "默认就展开了，等于没收起来"
+
+    # 折叠时资料不可见，展开后可见
+    assert not page.locator("#detail-artist").is_visible(), "折叠状态下画师信息还露着"
+    page.locator(".detail__moreSummary").click()
+    page.wait_for_timeout(300)
+    assert page.locator("#detail-artist").is_visible(), "展开后画师信息没出来"
+    assert page.locator(".drel__item").count() > 0, "展开后没有关系条目"
+
+
+def test_folded_summary_is_keyboard_operable(server, page):
+    """<details> 必须能用键盘展开 —— 这是它相对自写折叠的唯一好处。"""
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.locator(".card__body").first.click()
+    page.wait_for_timeout(800)
+
+    page.locator(".detail__moreSummary").focus()
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(300)
+    assert page.locator(".detail__more").evaluate("e => e.open"), "回车展不开"
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(300)
+    assert not page.locator(".detail__more").evaluate("e => e.open"), "再按回车收不起来"
+
+
+def test_identity_stays_visible_when_folded(server, page):
+    """折叠的只能是资料，不能把"她是谁"也藏起来。"""
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_timeout(1200)
+    page.locator(".card__body").first.click()
+    page.wait_for_timeout(800)
+
+    for sel in ["#detail-name", "#detail-tagline", "#detail-voice", "#detail-bio"]:
+        assert page.locator(sel).is_visible(), f"{sel} 被折叠藏起来了"

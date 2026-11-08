@@ -17,6 +17,7 @@ const state = {
   index: 0,
   viewer: null,
   game: null,
+  voiceIdx: 0, // 侧栏台词轮到第几句
 };
 
 /* ---------- 主题 ---------- */
@@ -59,15 +60,34 @@ function paintAccent(ch) {
  * @param {boolean} swap 是不是"换人"。进页面预填面板时传 false ——
  *   那时模型还在淡入，再叠一个切换动画会闪两下。
  */
+function paintVoice(ch) {
+  const lines = Array.isArray(ch.voice) ? ch.voice.filter(Boolean) : [];
+  const el = $('#stage-voice');
+  const btn = $('#stage-voice-next');
+  if (!lines.length) {
+    el.textContent = '';
+    el.hidden = true;
+    btn.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = `「${lines[state.voiceIdx % lines.length]}」`;
+  btn.hidden = lines.length < 2;
+}
+
 function paintPanel(ch, hasModel, swap = false) {
   paintAccent(ch);
 
-  // 换人的过渡：重新触发一次动画（同一个类名连加两次不会重播）
-  const cv = $('.stage__canvas');
-  if (swap && cv && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    cv.classList.remove('is-swapping');
-    void cv.offsetWidth; // 强制回流，让动画能从头上再放一次
-    cv.classList.add('is-swapping');
+  // 换人的过渡：画面和侧栏文字各闪一下。
+  // 同一个类名连加两次不会重播动画，所以先移除、强制回流、再加回来。
+  if (swap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (const sel of ['.stage__canvas', '.stage__panel']) {
+      const el = $(sel);
+      if (!el) continue;
+      el.classList.remove('is-swapping');
+      void el.offsetWidth;
+      el.classList.add('is-swapping');
+    }
   }
 
   $('#stage-region').textContent = `${ch.region} · ${ch.element}`;
@@ -83,6 +103,10 @@ function paintPanel(ch, hasModel, swap = false) {
 
   // 人物向的几行。数据在 characters.json 里一直有，只是侧栏没展示过。
   // 用 · 分隔而不是换行，窄屏下侧栏不会因为这几行被撑长。
+  // 台词：换人时从第一句重新开始，别接着上一个人看到一半的位置
+  state.voiceIdx = 0;
+  paintVoice(ch);
+
   const liked = Array.isArray(ch.likes) ? ch.likes.filter(Boolean) : [];
   const disliked = Array.isArray(ch.dislikes) ? ch.dislikes.filter(Boolean) : [];
   $('#stage-likes').textContent = liked.length ? liked.join(' · ') : '—';
@@ -270,6 +294,15 @@ async function init() {
 
   // 手指抬起一半又按下去（多指）时，别把上一次的 armed 留在那儿
   vp.addEventListener('touchcancel', () => { armed = false; }, { passive: true });
+
+  $('#stage-voice-next').addEventListener('click', () => {
+    const ch = state.all[state.index];
+    if (!ch) return;
+    const lines = Array.isArray(ch.voice) ? ch.voice : [];
+    if (lines.length < 2) return;
+    state.voiceIdx = (state.voiceIdx + 1) % lines.length;
+    paintVoice(ch);
+  });
 
   // 小游戏懒加载：只有点了才开始
   $('#game-btn').addEventListener('click', async () => {

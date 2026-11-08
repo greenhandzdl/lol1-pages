@@ -163,6 +163,9 @@ def test_detail_relations(server, page):
     page.wait_for_selector("#grid .card")
     page.click("#grid .card:first-child .card__body")
     page.wait_for_timeout(200)
+    # 关系收在「更多资料」里（弹窗分层，见 test_dialog_folds_reference_info）
+    page.click(".detail__moreSummary")
+    page.wait_for_timeout(200)
 
     rels = page.query_selector_all("#detail-rels .drel__item")
     assert len(rels) == 4, f"樱井小春应有 4 段关系，实际 {len(rels)}"

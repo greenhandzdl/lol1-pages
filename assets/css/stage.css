@@ -204,6 +204,7 @@
 
 /* ---------- 信息面板 ---------- */
 .stage__panel {
+  position: relative;
   min-width: 0;
   align-self: center;
   padding: clamp(18px, 2.4vw, 26px);
@@ -212,6 +213,35 @@
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm);
+  /* 不设 overflow:hidden —— 原本是为了裁切内部内容，但那会让色带的
+     直角被面板圆角切掉一截，顶部两个角看着像缺了。色带自己带圆角。 */
+}
+
+/* 换人时侧栏的文字是硬切的：上一秒显示这个人，下一秒整块换掉。
+   面板本身不动（底色、边框、色带都在），只让里层的文字淡一下，
+   读起来像"翻页"而不是"闪一下"。 */
+.stage__panel.is-swapping .stage__panelInner {
+  animation: panel-swap 160ms var(--ease);
+}
+@keyframes panel-swap {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage__panel.is-swapping .stage__panelInner { animation: none; }
+}
+
+/* 顶部的角色色带。
+   12 个人各有配色，但侧栏永远是同一种底色 —— 换成谁看起来都差不多。
+   一条 3px 的渐变把当前这个人的颜色放在最上面，只占高度不占面积，
+   内容变多之后正好撑住结构。 */
+.stage__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pa, var(--pink)), var(--pb, var(--pink-2)));
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .stage__eyebrow {
   margin: 0 0 6px;
@@ -284,6 +314,52 @@
   font-size: 0.74rem;
   color: var(--ink-3);
 }
+
+/* 她的台词。
+   和首页弹窗里那处同一套语义：tagline 是"书怎么介绍她"，
+   这句是"她自己说"。用左侧竖线 + 很淡的渐变区分开。 */
+.stage__voice {
+  margin: 0 0 14px;
+  padding: 0.5rem 0 0.5rem 0.85rem;
+  border-left: 2px solid var(--pa, var(--pink));
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--pa, var(--pink)) 7%, transparent),
+    transparent 70%
+  );
+  border-radius: 0 8px 8px 0;
+}
+.stage__voice-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: var(--ink);
+  /* 换句时高度变化别把下面的内容顶着跳 */
+  min-height: 2.5em;
+}
+.stage__voice-text[hidden] { display: none; }
+.stage__voice-next {
+  appearance: none;
+  margin-top: 0.25rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ink-3) 40%, transparent);
+  transition: color 0.2s;
+}
+.stage__voice-next:hover { color: var(--pa-glow, var(--pink-2)); }
+.stage__voice-next:focus-visible {
+  outline: 2px solid var(--pa-glow, var(--pink-2));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.stage__voice-next[hidden] { display: none; }
 
 /* 人物向的几行（喜欢 / 不喜欢 / 小习惯）。
    和上面的「元素/地域/标签」用同一种排版，但那组是属性、这组是人，

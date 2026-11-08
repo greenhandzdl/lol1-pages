@@ -1127,6 +1127,56 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 0.88rem;
   line-height: 1.95;
 }
+
+/* 台词。
+   和上面的 tagline 分开：tagline 是"这本书怎么介绍她"，
+   台词是"她自己在说话"。所以给一句左竖线 + 轻微底色，
+   读起来像引语而不是简介。 */
+.detail__voice {
+  position: relative;
+  margin: 0.75rem 0 0.85rem;
+  padding: 0.55rem 0 0.55rem 0.9rem;
+  border-left: 2px solid var(--pa, var(--pink));
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--pa, var(--pink)) 7%, transparent),
+    transparent 70%
+  );
+  border-radius: 0 8px 8px 0;
+}
+.detail__voice-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.85;
+  color: var(--ink);
+  /* 换句时的高度变化别把下面的内容顶着跳 */
+  min-height: 2.6em;
+}
+.detail__voice-text[hidden] { display: none; }
+.detail__voice-next {
+  appearance: none;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ink-3) 40%, transparent);
+  transition: color 0.2s;
+}
+.detail__voice-next:hover { color: var(--pink-2); }
+.detail__voice-next:focus-visible {
+  outline: 2px solid var(--pink-2);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.detail__voice-next[hidden] { display: none; }
+[data-theme='dark'] .detail__voice-next:hover { color: var(--pink-ink); }
+[data-theme='dark'] .detail__voice-next:focus-visible { outline-color: var(--pink-ink); }
 .detail__meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2323,4 +2373,127 @@ html::after {
 }
 @media (prefers-reduced-motion: reduce) {
   .traits__bar > i { transition: none; }
+}
+
+/* ---------------------------------------------------------------
+   阅读进度 + 回到顶部
+
+   这条页面在手机上 9.7 屏高（约 8700px），滚到一半不知道还剩多少。
+   进度条回答"我走到哪了"，回到顶部回答"怎么回去"。
+   --------------------------------------------------------------- */
+
+.readbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 60;
+  pointer-events: none;
+  background: transparent;
+}
+.readbar__fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--pa, var(--pink)), var(--pb, var(--pink-2)));
+  /* width 而不是 transform:scaleX —— 2px 高的线上 scale 会有亚像素抖动，
+     滚动时看着像在抖。这条线本来就便宜，性能不是瓶颈。 */
+  transition: width 0.1s linear;
+}
+
+.to-top {
+  position: fixed;
+  right: clamp(14px, 3vw, 28px);
+  bottom: clamp(14px, 3vw, 28px);
+  z-index: 55;
+  display: grid;
+  place-items: center;
+  width: 44px; /* 触控区下限 */
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s var(--ease), background 0.25s, color 0.25s;
+  animation: pop-in 0.25s var(--ease);
+}
+.to-top:hover {
+  transform: translateY(-2px);
+  background: var(--surface-2);
+  color: var(--pink-2);
+}
+.to-top:focus-visible {
+  outline: 2px solid var(--pink-2);
+  outline-offset: 3px;
+}
+.to-top[hidden] { display: none; }
+[data-theme='dark'] .to-top:hover { color: var(--pink-ink); }
+[data-theme='dark'] .to-top:focus-visible { outline-color: var(--pink-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .readbar__fill { transition: none; }
+  .to-top { animation: none; }
+  .to-top:hover { transform: none; }
+}
+
+/* ---------------------------------------------------------------
+   弹窗分层：把「查资料时才要的」收进 details
+
+   加了台词之后，弹窗在手机上正好占满一屏（内容 1272px vs 视口 844px）。
+   但真正要看的是"她是谁 / 她说什么 / 她的故事"，
+   "画师 / 授权 / 六维性格 / 和谁有关"属于查资料时才翻的部分。
+
+   用原生 <details>：键盘能开、读屏会念展开状态、不用写折叠 JS。
+   --------------------------------------------------------------- */
+
+.detail__more {
+  margin: 0.2rem 0 0.6rem;
+  border-top: 1px dashed var(--line-2);
+  border-bottom: 1px dashed var(--line-2);
+}
+
+.detail__moreSummary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  list-style: none; /* 去掉默认三角，自己画一个 */
+  transition: color 0.2s;
+}
+.detail__moreSummary::-webkit-details-marker { display: none; }
+.detail__moreSummary::before {
+  content: '›';
+  display: inline-block;
+  width: 1em;
+  color: var(--ink-3);
+  transition: transform 0.2s var(--ease);
+  transform-origin: 50% 50%;
+}
+.detail__more[open] > .detail__moreSummary::before { transform: rotate(90deg); }
+.detail__moreSummary:hover { color: var(--ink); }
+.detail__moreSummary:focus-visible {
+  outline: 2px solid var(--pink-2);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.detail__moreHint {
+  color: var(--ink-3);
+  font-size: 0.74rem;
+}
+.detail__more[open] .detail__moreHint { display: none; }
+
+/* 展开后里面的块不要再多出一层虚线分隔 */
+.detail__more > .detail__meta,
+.detail__more > .detail__traits,
+.detail__more > .detail__rels {
+  margin-top: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail__moreSummary::before { transition: none; }
 }

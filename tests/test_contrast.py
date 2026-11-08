@@ -81,8 +81,16 @@ def _measure(page, locator):
     return _ratio(darkest, lightest), darkest, lightest
 
 
-def _open_dialog(page):
+def _open_dialog(page, expand=True):
+    """打开详情弹窗。
+
+    性格和关系现在收在「更多资料」里（默认折叠），要量它们的对比度
+    得先展开 —— 折叠状态在 display:none 的子树里，量不了。
+    """
     page.locator(".card__body").first.click()
+    page.wait_for_selector("#detail-name")
+    if expand:
+        page.evaluate("document.querySelector('.detail__more').open = true")
     page.wait_for_selector("#detail-traits .traits__row")
     page.wait_for_timeout(300)
 
@@ -133,6 +141,8 @@ def test_dialog_inherits_character_accent(server, page):
     fills = set()
     for i in (0, 2, 5):
         page.locator(".card__body").nth(i).click()
+        page.wait_for_selector("#detail-name")
+        page.evaluate("document.querySelector('.detail__more').open = true")
         page.wait_for_selector("#detail-traits .traits__row")
         page.wait_for_timeout(250)
         fills.add(

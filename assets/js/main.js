@@ -23,6 +23,7 @@ const state = {
   favs: new Set(),
   currentId: null,
   trigger: null,
+  voiceIdx: 0, // 弹窗里台词轮到第几句
 };
 
 /**
@@ -729,6 +730,9 @@ function openDetail(id, trigger) {
   $('#detail-name').textContent = c.name;
   $('#detail-en').textContent = c.nameEn;
   $('#detail-tagline').textContent = `“${c.tagline}”`;
+  // 台词：每次打开弹窗从第一句开始，别接着上一个人看到一半的位置
+  state.voiceIdx = 0;
+  paintVoice(c);
   $('#detail-bio').textContent = c.bio;
   $('#detail-region').textContent = c.region;
   $('#detail-element').textContent = c.element;
@@ -811,6 +815,86 @@ function renderDetailRels(c) {
   host.querySelectorAll('[data-goto]').forEach((btn) => {
     btn.addEventListener('click', () => openDetail(btn.dataset.goto));
   });
+}
+
+/**
+ * 画当前这一句台词。
+ *
+ * 按角色缓存，所以换人再换回来还是从第一句起（在 openDetail 里重置）。
+ * 有些角色 voice 可能只有一两句，取模兜住。
+ */
+function paintVoice(c) {
+  const lines = Array.isArray(c.voice) ? c.voice.filter(Boolean) : [];
+  const el = $('#detail-voice');
+  const btn = $('#detail-voice-next');
+  if (!lines.length) {
+    el.textContent = '';
+    el.hidden = true;
+    btn.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = `「${lines[state.voiceIdx % lines.length]}」`;
+  // 只有一句就没什么可换的
+  btn.hidden = lines.length < 2;
+}
+
+/**
+ * 阅读进度条 + 回到顶部。
+ *
+ * 两件事共用一个 scroll 监听、一个 rAF 节流 —— 分成两个监听会让同一帧里
+ * 排两次回调，滚动时白掉帧。
+ *
+ * 进度条用 width 百分比：整页高度的比例最直观，也不需要读 CSS 变量。
+ * 回到顶部滚过一屏才出现 —— 刚进页面就挂一个按钮既挡内容也没有意义。
+ */
+function initReadProgress() {
+  const bar = $('#readbar .readbar__fill');
+  const top = $('#to-top');
+  if (!bar || !top) return;
+
+  let queued = false;
+
+  const apply = () => {
+    queued = false;
+    const doc = document.documentElement;
+    // scrollHeight - clientHeight 就是"还能滚多少"，除数不能为 0
+    const scrollable = doc.scrollHeight - doc.clientHeight;
+    const y = window.scrollY || doc.scrollTop;
+    const pct = scrollable > 0 ? Math.min(1, Math.max(0, y / scrollable)) : 0;
+    bar.style.width = `${(pct * 100).toFixed(2)}%`;
+    // 一屏以下不显示，避免挡住第一屏内容
+    top.hidden = y < doc.clientHeight * 0.9;
+  };
+
+  const onScroll = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(apply);
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+
+  top.addEventListener('click', () => {
+    // 减少动效时直接跳，别滚一段动画
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+    // 跳完之后把焦点送回页面开头，键盘用户不用再 Tab 一遍
+    const skip = document.querySelector('.skip-link');
+    if (skip) skip.focus({ preventScroll: true });
+  });
+
+  apply();
+}
+
+function nextVoice() {
+  const c = byId(state.currentId);
+  if (!c) return;
+  const lines = Array.isArray(c.voice) ? c.voice : [];
+  if (lines.length < 2) return;
+  state.voiceIdx = (state.voiceIdx + 1) % lines.length;
+  paintVoice(c);
 }
 
 function syncDetailLike() {
@@ -1088,6 +1172,9 @@ async function init() {
     state.currentId = null;
     syncURL();
   });
+  $('#detail-voice-next').addEventListener('click', nextVoice);
+  initReadProgress();
+
   dialog.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') moveDetail(-1);
     if (e.key === 'ArrowRight') moveDetail(1);

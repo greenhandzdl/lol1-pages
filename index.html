@@ -58,6 +58,11 @@
   </script>
 </head>
 <body>
+  <!-- 滚动进度：这条页面 8~10 屏高，滚到一半完全不知道还剩多少。
+       一根 2px 的线，成本几乎为零，但能回答"我走到哪了"。
+       注意 id 不能叫 progress —— 主页 hero 里的"图鉴完成度"已经占了那个名字。 -->
+  <div class="readbar" id="readbar" aria-hidden="true"><span class="readbar__fill"></span></div>
+
   <a class="skip-link" href="#gallery">跳到图鉴</a>
 
   <header class="site-header">
@@ -403,6 +408,15 @@
     </section>
   </main>
 
+  <!-- 回到顶部：手机上是 7795px，滑回去要很久。
+       滚过一屏才出现，别一进页面就挡住内容。 -->
+  <button class="to-top" id="to-top" type="button" aria-label="回到页面顶部" hidden>
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
+
   <footer class="footer">
     <div class="wrap footer__inner">
       <p>© 2026 lol1.moe · 用爱发电</p>
@@ -430,16 +444,38 @@
         <h2 id="detail-name"></h2>
         <p class="detail__en" id="detail-en"></p>
         <p class="detail__tagline" id="detail-tagline"></p>
+        <!-- 她说话。
+             characters.json 里每人写了 3 句台词，12 个人 36 句 ——
+             一个页面都没用过。台词比任何属性都更像"这个人"，
+             所以放在 tagline 之下、正文之上。
+             aria-live 是给读屏的：点一下换句，读屏也要跟着念出新的一句，
+             否则对它来说按钮点了等于没反应。 -->
+        <div class="detail__voice">
+          <p class="detail__voice-text" id="detail-voice" aria-live="polite"></p>
+          <button class="detail__voice-next" id="detail-voice-next" type="button"
+                  aria-label="换一句台词">换一句 »</button>
+        </div>
         <p class="detail__bio" id="detail-bio"></p>
-        <dl class="detail__meta">
-          <div><dt>居住地</dt><dd id="detail-region"></dd></div>
-          <div><dt>属性</dt><dd id="detail-element"></dd></div>
-          <div><dt>画师</dt><dd id="detail-artist"></dd></div>
-          <div><dt>授权</dt><dd id="detail-license"></dd></div>
-        </dl>
-        <div class="detail__traits" id="detail-traits"></div>
+        <!-- 参考信息折叠起来。
+             弹窗在手机上加了台词之后正好占满一屏，再长就得滚。
+             但"她是谁 / 她说什么 / 她的故事"是主要内容，"画师/授权/
+             六维性格/和谁有关"是查资料时才要的 —— 后者收进 details，
+             默认不展开，需要时点一下。
+
+             用原生 <details>：键盘可操作、读屏会念展开状态、
+             不用写一行 JS 折叠逻辑。 -->
+        <details class="detail__more">
+          <summary class="detail__moreSummary">更多资料<span class="detail__moreHint">画师 · 性格 · 关系</span></summary>
+          <dl class="detail__meta">
+            <div><dt>居住地</dt><dd id="detail-region"></dd></div>
+            <div><dt>属性</dt><dd id="detail-element"></dd></div>
+            <div><dt>画师</dt><dd id="detail-artist"></dd></div>
+            <div><dt>授权</dt><dd id="detail-license"></dd></div>
+          </dl>
+          <div class="detail__traits" id="detail-traits"></div>
+          <div class="detail__rels" id="detail-rels" hidden></div>
+        </details>
         <div class="detail__tags" id="detail-tags"></div>
-        <div class="detail__rels" id="detail-rels" hidden></div>
         <div class="detail__actions">
           <button class="btn btn--ghost btn--small" id="detail-like" type="button" aria-pressed="false">♡ 收进口袋</button>
           <a class="btn btn--ghost btn--small" id="detail-story" href="#">读她的故事 →</a>

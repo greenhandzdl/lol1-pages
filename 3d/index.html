@@ -104,34 +104,46 @@
     </div>
 
     <aside class="stage__panel" aria-labelledby="stage-name">
-      <p class="stage__eyebrow" id="stage-region">—</p>
-      <h1 class="stage__name" id="stage-name">—</h1>
-      <p class="stage__title" id="stage-title"></p>
-      <p class="stage__tagline" id="stage-tagline"></p>
-      <dl class="stage__meta">
-        <div><dt>元素</dt><dd id="stage-element">—</dd></div>
-        <div><dt>地域</dt><dd id="stage-region2">—</dd></div>
-        <div><dt>标签</dt><dd id="stage-tags">—</dd></div>
-      </dl>
-      <p class="stage__credit" id="stage-credit"></p>
+      <!-- 内层容器：换人时只让这层淡入，面板的底色/边框/色带都不动 -->
+      <div class="stage__panelInner">
+        <p class="stage__eyebrow" id="stage-region">—</p>
+        <h1 class="stage__name" id="stage-name">—</h1>
+        <p class="stage__title" id="stage-title"></p>
+        <p class="stage__tagline" id="stage-tagline"></p>
+        <dl class="stage__meta">
+          <div><dt>元素</dt><dd id="stage-element">—</dd></div>
+          <div><dt>地域</dt><dd id="stage-region2">—</dd></div>
+          <div><dt>标签</dt><dd id="stage-tags">—</dd></div>
+        </dl>
+        <p class="stage__credit" id="stage-credit"></p>
 
-      <!-- 官网原来的侧栏只有干巴巴的「元素/地域/标签」三行，看完不知道
-           她是谁。档案页里早就写好了喜欢/不喜欢/小习惯，这里一直没露过面。
-           切换人物时补上这几行，翻着手办就有新东西可看。 -->
-      <dl class="stage__meta stage__meta--person" id="stage-person">
-        <div><dt>喜欢</dt><dd id="stage-likes">—</dd></div>
-        <div><dt>不喜欢</dt><dd id="stage-dislikes">—</dd></div>
-      </dl>
-      <p class="stage__habit" id="stage-habit"></p>
+        <!-- 官网原来的侧栏只有干巴巴的「元素/地域/标签」三行，看完不知道
+             她是谁。档案页里早就写好了喜欢/不喜欢/小习惯，这里一直没露过面。
+             切换人物时补上这几行，翻着手办就有新东西可看。 -->
+        <!-- 她在说话。台词放在属性之后、喜好之前 ——
+             上半截是"她是谁"（属性），下半截是"她什么样"（喜好/习惯），
+             台词正好是这两半之间的过渡。 -->
+        <div class="stage__voice">
+          <p class="stage__voice-text" id="stage-voice" aria-live="polite"></p>
+          <button class="stage__voice-next" id="stage-voice-next" type="button"
+                  aria-label="换一句台词">换一句 »</button>
+        </div>
 
-      <div class="stage__strip" id="stage-strip" role="group" aria-label="选择一个角色"></div>
+        <dl class="stage__meta stage__meta--person" id="stage-person">
+          <div><dt>喜欢</dt><dd id="stage-likes">—</dd></div>
+          <div><dt>不喜欢</dt><dd id="stage-dislikes">—</dd></div>
+        </dl>
+        <p class="stage__habit" id="stage-habit"></p>
 
-      <div class="stage__actions">
-        <button class="btn btn--ghost" id="prev-btn" type="button" aria-label="上一个角色">← 上一个</button>
-        <button class="btn btn--primary" id="game-btn" type="button">开始寻星</button>
-        <button class="btn btn--ghost" id="next-btn" type="button" aria-label="下一个角色">下一个 →</button>
+        <div class="stage__strip" id="stage-strip" role="group" aria-label="选择一个角色"></div>
+
+        <div class="stage__actions">
+          <button class="btn btn--ghost" id="prev-btn" type="button" aria-label="上一个角色">← 上一个</button>
+          <button class="btn btn--primary" id="game-btn" type="button">开始寻星</button>
+          <button class="btn btn--ghost" id="next-btn" type="button" aria-label="下一个角色">下一个 →</button>
+        </div>
+        <p class="stage__keys" aria-hidden="true">← → 切换 · 拖拽旋转 · 滚轮缩放</p>
       </div>
-      <p class="stage__keys" aria-hidden="true">← → 切换 · 拖拽旋转 · 滚轮缩放</p>
     </aside>
 
     <section class="game" id="game" hidden aria-labelledby="game-title">

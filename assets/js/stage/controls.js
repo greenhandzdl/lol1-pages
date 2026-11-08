@@ -124,11 +124,21 @@ export class StageControls {
       this._lastT = now;
 
       this.targetYaw += dx * 0.0075;
-      this.targetPitch = MathUtils.clamp(
-        this.targetPitch + dy * 0.0042,
-        -PITCH_LIMIT,
-        PITCH_LIMIT,
-      );
+
+      /* 俯仰角到边时做软阻尼，而不是直接 clamp 卡死。
+         硬 clamp 的手感是"撞到一堵墙"：手还在动，画面不动，像卡了一下。
+         改成越靠近边界、同样的手势挪动得越少 —— 手感上是"到头了"，
+         而不是"坏了"。 */
+      const want = this.targetPitch + dy * 0.0042;
+      const over = Math.abs(want) / PITCH_LIMIT;
+      if (over > 0.78) {
+        // 从 78% 开始逐渐吃力，到 100% 时只再走 8%
+        const ease = Math.max(0.08, 1 - (over - 0.78) / 0.22);
+        this.targetPitch += dy * 0.0042 * ease;
+        this.targetPitch = MathUtils.clamp(this.targetPitch, -PITCH_LIMIT, PITCH_LIMIT);
+      } else {
+        this.targetPitch = want;
+      }
 
       // 估计松手瞬间的角速度（用于惯性）
       this.velocity = this.reduced ? 0 : (dx * 0.0075) / (dt / 1000);

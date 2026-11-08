@@ -737,3 +737,36 @@ def test_404_flower_does_not_cover_the_heading(server, page):
         )
         overlapped = not (f[1] < h[0] or f[0] > h[1])
         assert not overlapped, f"{w}px 下花压在标题上：花{f} 标题{h}"
+
+
+def test_gallery_cards_show_their_tagline(server, page):
+    """图鉴每张卡要带她自己的那一句话。
+
+    12 句 tagline 原来只在弹窗里出现，一眼扫过图鉴只有"樱花树下的巫女"
+    这种身份标签，没有一句能听出说话的口气。
+    """
+    import json
+
+    data = json.loads(open("assets/data/characters.json", encoding="utf-8").read())
+    by_name = {c["name"]: c for c in data["characters"]}
+
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_selector("#grid .card")
+    page.wait_for_timeout(600)
+
+    tags = page.locator("#grid .card__tagline")
+    assert tags.count() == 12, f"12 张卡只有 {tags.count()} 张带台词"
+
+    wrong = []
+    for i in range(12):
+        card = page.locator("#grid .card").nth(i)
+        # .card__name 里面有 <small>英文名</small> 和 3D 角标，
+        # inner_text 会把它们连在一起，只取第一个文本节点才是中文名
+        name = card.locator(".card__name").evaluate(
+            "(el) => el.childNodes[0].textContent.trim()"
+        )
+        got = card.locator(".card__tagline").inner_text().strip().strip("“”")
+        want = by_name[name]["tagline"]
+        if got != want:
+            wrong.append((name, got, want))
+    assert not wrong, f"这些卡片台词对不上：{wrong}"

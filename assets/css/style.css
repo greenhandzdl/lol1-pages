@@ -815,6 +815,25 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 0.8rem;
   color: var(--ink-2);
 }
+
+/* 卡片上的那一句台词。
+   身份标签（樱花树下的巫女）说的是"她是谁"，这句说的是"她怎么说"。
+   用斜体 + 角色自己的颜色，和下面那排主题标签区分开。 */
+.card__tagline {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  font-style: italic;
+  /* 不能用 --pa-glow：那是给发光效果用的浅色，当文字色只有 1.2~1.6:1，
+     几乎看不见。改用 --ink-2，读得清，斜体本身已经能和身份标签区分开。 */
+  color: var(--ink-2);
+  /* 再长也不换第三行，卡片的节奏靠这个维持 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .card__tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
 
 /* 卡片上的主题。放在 .card__body 之外——那是个 <button>，

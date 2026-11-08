@@ -308,3 +308,15 @@ def test_stage_labels_use_glow_accent_in_dark(server, page):
         if ratio < AA_NORMAL:
             failures.append(f"{label} {ratio:.2f}:1 (字{dark} 底{light})")
     assert not failures, "3D 台暗色主题下这些文字不够: " + ", ".join(failures)
+
+
+def test_card_tagline_is_readable(server, page):
+    """卡片上那句台词要读得清。
+
+    第一版用了 var(--pa-glow) —— 那是给发光效果用的浅色，
+    当文字色只有 1.2~1.6:1，等于看不见。
+    """
+    page.goto(f"{BASE}/", wait_until="networkidle")
+    page.wait_for_selector(".card__tagline")
+    ratio, dark, light = _measure(page, page.locator(".card__tagline").first)
+    assert ratio >= AA_NORMAL, f"卡片台词 {ratio:.2f}:1 (字{dark} 底{light})"

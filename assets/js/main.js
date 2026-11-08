@@ -119,6 +119,10 @@ function cardHTML(c, index) {
         <span class="card__info">
           <span class="card__name">${c.name}<small>${c.nameEn}</small>${c.model ? `<span class="card__model" title="她有一座可以转着看的 3D 手办">3D</span>` : ''}</span>
           <span class="card__title">${c.title}</span>
+          <!-- 她自己的那一句。12 句 tagline 之前只在弹窗里出现，
+               图鉴一眼扫过去只有"樱花树下的巫女"这种身份标签，
+               没有一句能听出说话口气的。 -->
+          <span class="card__tagline">“${c.tagline}”</span>
         </span>
       </button>
       <div class="card__themes">${themes}</div>

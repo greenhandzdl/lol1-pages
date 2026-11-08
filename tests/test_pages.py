@@ -641,3 +641,99 @@ def test_capability_module_does_not_pull_in_three():
     assert not imports, f"capability.js 不该有任何 import，实际有：{imports}"
     # 动态 import 也不行：一样会把 three 拉进这一层
     assert "import(" not in src, "capability.js 里出现了动态 import"
+
+
+def test_region_cards_show_place_notes(server, page):
+    """首页「十二个地方」要把地点描写写出来。
+
+    这段 prose 在 data 里每人都有（35~49 字），但首页一个小字都没展示 ——
+    标题写着"看看那里住着谁"，卡片上只有人名和元素。
+    """
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_selector("#regions-grid .region")
+    page.wait_for_timeout(400)
+
+    notes = page.locator("#regions-grid .region__note")
+    assert notes.count() == 12, f"12 张地域卡只有 {notes.count()} 张带描写"
+
+    texts = [notes.nth(i).inner_text().strip() for i in range(12)]
+    assert all(len(t) >= 25 for t in texts), f"有描写太短或为空：{texts}"
+
+
+def test_region_notes_match_data(server, page):
+    """卡片上的描写要和 characters.json 一致，且不带「地名：」前缀。
+
+    卡片上地名已经单独占一行，描写再带一遍前缀就是重复。
+    """
+    import json
+
+    data = json.loads(open("assets/data/characters.json", encoding="utf-8").read())
+    by_region = {c["region"]: c for c in data["characters"]}
+
+    page.goto(BASE + "/", wait_until="networkidle")
+    page.wait_for_selector("#regions-grid .region")
+    page.wait_for_timeout(400)
+
+    cards = page.locator("#regions-grid .region")
+    wrong = []
+    for i in range(cards.count()):
+        card = cards.nth(i)
+        region = card.locator(".region__name").inner_text().strip()
+        got = card.locator(".region__note").inner_text().strip()
+        raw = by_region[region]["regionNote"]
+        want = raw.split("：", 1)[1] if "：" in raw else raw
+        if got != want:
+            wrong.append((region, got, want))
+    assert not wrong, f"这些地名的描写对不上：{wrong}" 
+
+
+def test_404_offers_a_way_into_the_atlas(server, page):
+    """404 要能给人一条路，不能只有一句"迷路了"。
+
+    原来只有两个按钮。加上 12 位居民的入口之后，迷路的人点谁都走得通。
+    """
+    page.goto(BASE + "/404.html", wait_until="networkidle")
+    page.wait_for_timeout(800)
+
+    cards = page.locator(".lost__card")
+    assert cards.count() == 12, f"404 页只列出了 {cards.count()} 位居民"
+
+    # 每张卡都要指向一个真角色页
+    hrefs = set()
+    for i in range(cards.count()):
+        hrefs.add(cards.nth(i).get_attribute("href"))
+    assert len(hrefs) == 12, "有重复的角色链接"
+    assert all(h and h.startswith("/c/") for h in hrefs), f"链接不对：{hrefs}"
+
+
+def test_404_recommendations_fail_silently(server, page):
+    """取不到数据时不能把 404 页搞坏 —— 主文案和按钮还得在。"""
+    page.route("**/characters.json", lambda route: route.abort())
+    page.goto(BASE + "/404.html", wait_until="networkidle")
+    page.wait_for_timeout(600)
+
+    assert page.locator(".lost__card").count() == 0, "数据被掐断了还是画出了卡片"
+    assert page.locator(".error-page h1").is_visible(), "主标题不见了"
+    assert page.locator('.actions a[href="/"]').is_visible(), "回首页的按钮不见了"
+
+
+def test_404_flower_does_not_cover_the_heading(server, page):
+    """右上角的 ✿ 是装饰，不能压在标题上。
+
+    花原来挂在页面容器上（top:16%），容器高度随内容变 —— 加了人物推荐之后
+    标题被居中算法顶上去，正好撞上花。
+    """
+    for w in (1280, 390):
+        page.set_viewport_size({"width": w, "height": 900})
+        page.goto(BASE + "/404.html", wait_until="networkidle")
+        page.wait_for_timeout(700)
+        f = page.evaluate(
+            "() => { const r = document.querySelector('.ghost-flower').getBoundingClientRect();"
+            " return [r.top, r.bottom]; }"
+        )
+        h = page.evaluate(
+            "() => { const r = document.querySelector('.error-page h1').getBoundingClientRect();"
+            " return [r.top, r.bottom]; }"
+        )
+        overlapped = not (f[1] < h[0] or f[0] > h[1])
+        assert not overlapped, f"{w}px 下花压在标题上：花{f} 标题{h}"

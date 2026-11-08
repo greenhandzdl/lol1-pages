@@ -349,6 +349,19 @@ def test_double_click_resets_the_view(server, page):
     assert canvas.screenshot() == home, "双击没有回到初始视角"
 
 
+def _wait_for_swap_class(page, selector, timeout=8000):
+    """等换人动画的类名出现。
+
+    不能固定 sleep 一个常数 —— is-swapping 是在 onChange 里加的，而 onChange
+    要等模型加载完才触发。冷缓存时可能几百毫秒才到，固定等 200ms 会偶发失败。
+    """
+    page.wait_for_function(
+        "(sel) => document.querySelector(sel)?.classList.contains('is-swapping')",
+        arg=selector,
+        timeout=timeout,
+    )
+
+
 def test_swapping_adds_a_transition_but_first_load_does_not(server, page):
     """换人时要有过渡，首次加载时不要。
 
@@ -362,8 +375,7 @@ def test_swapping_adds_a_transition_but_first_load_does_not(server, page):
     assert "is-swapping" not in (canvas.get_attribute("class") or ""), "首次加载就播了换人动画"
 
     page.locator("#next-btn").click()
-    page.wait_for_timeout(300)
-    assert "is-swapping" in (canvas.get_attribute("class") or ""), "换人时没有过渡"
+    _wait_for_swap_class(page, ".stage__canvas")
 
 
 def test_transition_respects_reduced_motion(server, page, browser):
@@ -559,8 +571,7 @@ def test_panel_text_fades_on_swap_but_not_on_load(server, page):
     assert "is-swapping" not in (panel.get_attribute("class") or ""), "首次加载就淡入了"
 
     page.locator("#next-btn").click()
-    page.wait_for_timeout(200)
-    assert "is-swapping" in (panel.get_attribute("class") or ""), "换人时侧栏没有淡入"
+    _wait_for_swap_class(page, ".stage__panel")
 
 
 def test_pitch_has_soft_limit(server, page):

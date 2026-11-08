@@ -163,6 +163,18 @@ function renderRegions() {
     document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // regionNote 是「地名：描写」的格式，卡片上地名的位置已经单独显示，
+  // 所以只取冒号后面那半段。
+  // 这里的内容来自 data 文件，但拼进 innerHTML 前还是要转义 ——
+  // 以后有人往数据里写个 < 就把页面弄坏了，build 脚本里也是这么做的。
+  const esc = (t) =>
+    String(t ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+  const noteOf = (c) => {
+    const raw = (c.regionNote || '').trim();
+    const i = raw.indexOf('：');
+    return esc(i >= 0 ? raw.slice(i + 1) : raw);
+  };
+
   host.innerHTML = state.all
     .map(
       (c) => `<button class="region" type="button" data-id="${c.id}"
@@ -171,6 +183,7 @@ function renderRegions() {
           <span class="region__name">${c.region}</span>
           <span class="region__who">${c.name}</span>
           <span class="region__el">${c.element}</span>
+          <span class="region__note">${esc(noteOf(c))}</span>
         </button>`,
     )
     .join('');

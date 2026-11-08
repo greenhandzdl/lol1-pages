@@ -1376,12 +1376,16 @@ body.is-locked { overflow: hidden; }
   line-height: 1.9;
 }
 .error-page .actions { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+/* 花是装饰，挂在内容块右上角。
+   原来挂在页面容器上（top:16%），容器高度随内容变，花的位置就跟着漂 ——
+   404 页加了人物推荐之后，标题被居中算法顶上去，正好撞上花。 */
 .error-page .ghost-flower {
   position: absolute;
-  right: 8%;
-  top: 16%;
+  right: -6%;
+  top: -5%;
   font-size: clamp(3rem, 8vw, 6rem);
   opacity: 0.35;
+  pointer-events: none;
   animation: bob 7s ease-in-out infinite;
 }
 
@@ -1535,7 +1539,8 @@ body.is-locked { overflow: hidden; }
 .regions {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  /* 158 -> 186：卡片里要放得下三行描写，太窄会把每行挤到 8 个字 */
+  grid-template-columns: repeat(auto-fill, minmax(186px, 1fr));
 }
 
 /* 每个地名用该角色自己的两色做底，12 个格子天然就是 12 种颜色。
@@ -1546,8 +1551,11 @@ body.is-locked { overflow: hidden; }
   position: relative;
   display: grid;
   gap: 2px;
-  align-content: end;
-  min-height: 132px;
+  /* 原来是 align-content: end —— 靠底排，让几个短标签贴着卡片下沿。
+     加入地点描写之后每张卡的字数不一样，靠底排会让地名高低不齐
+     （描写长的卡片地名往上顶）。改成从顶部开始排，12 个地名一条线。 */
+  align-content: start;
+  min-height: 176px;
   padding: 18px 15px 14px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--pb) 34%, var(--line));
@@ -1572,6 +1580,36 @@ body.is-locked { overflow: hidden; }
 [data-theme="dark"] .region__glyph { color: var(--pa-ink); opacity: 0.5; }
 .region:hover .region__glyph,
 .region:focus-visible .region__glyph { opacity: 0.72; transform: rotate(-6deg) scale(1.06); }
+
+/* 地点描写。
+   这一段在 data 里一直写着（每人 35~49 字），但首页的「十二个地方」
+   一个小字都没展示 —— 标题说"看看那里住着谁"，卡片上只有人名。
+   放进卡片后格子变高，所以 min-height 从 132 抬到 176。
+   不限行数：截断会切掉「石阶三十七级，最后三级最陡」这种最见性格的结尾，
+   宁可让格子随文字长高 —— 同一行的卡片会被 grid 拉齐，不会参差。 */
+.region__note {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--pa-ink);
+  opacity: 0.82;
+}
+[data-theme="dark"] .region__note { opacity: 0.88; }
+
+/* 窄屏两列。
+   加入描写后单列每张卡 209px，12 张要滚 2500px；而且整行宽度只放两行字，
+   大片空白。改成两列，卡片降到约 200px 高、总高砍掉一半，
+   字也更聚。320px 以下再退回单列 —— 那时两列每列只有 140px，
+   一行放不下 8 个字，读起来会断。 */
+@media (max-width: 560px) {
+  .regions { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .region { min-height: 0; padding: 14px 12px 12px; }
+  .region__note { font-size: 0.7rem; line-height: 1.55; }
+  .region__glyph .glyph { width: 34px; height: 34px; }
+}
+@media (max-width: 340px) {
+  .regions { grid-template-columns: 1fr; }
+}
 
 .region > * { position: relative; z-index: 1; }
 
@@ -2496,4 +2534,73 @@ html::after {
 
 @media (prefers-reduced-motion: reduce) {
   .detail__moreSummary::before { transition: none; }
+}
+
+/* ---------------------------------------------------------------
+   404 页的人物推荐
+
+   迷路的人只看一句"页面被风吹走了"就没事可做了。这里列出 12 位居民，
+   点谁都有一条路可走 —— 比两个按钮更能把人留住。
+   --------------------------------------------------------------- */
+
+.lost {
+  margin-top: 2rem;
+  width: 100%;
+}
+.lost[hidden] { display: none; }
+
+.lost__label {
+  margin: 0 0 0.85rem;
+  font-size: 0.76rem;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+}
+
+.lost__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 10px;
+}
+
+.lost__card {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-decoration: none;
+  transition: transform 0.2s var(--ease), border-color 0.2s, box-shadow 0.2s;
+}
+.lost__card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 9px;
+}
+.lost__name {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lost__card:hover,
+.lost__card:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--pink-2) 45%, var(--line));
+  box-shadow: var(--shadow-sm);
+}
+.lost__card:focus-visible {
+  outline: 2px solid var(--pink-2);
+  outline-offset: 2px;
+}
+.lost__card:hover .lost__name { color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lost__card { transition: none; }
+  .lost__card:hover { transform: none; }
 }

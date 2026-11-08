@@ -26,8 +26,11 @@
 </head>
 <body>
   <main class="error-page">
-    <span class="ghost-flower" aria-hidden="true">✿</span>
     <div class="error-page__inner">
+      <!-- 花挂在内容块上，不挂在容器上。
+           容器是 min-height:100dvh 且内容居中，加了下面的推荐之后内容变高、
+           标题被顶上去，而挂在容器上的花（top:16%）不动，正好压住标题。 -->
+      <span class="ghost-flower" aria-hidden="true">✿</span>
       <p class="code" aria-hidden="true">404</p>
       <h1>这位小小居民，好像迷路了</h1>
       <p>你要找的页面被风吹走啦。<br>不如先回图鉴，看看 12 位小小居民在做什么？</p>
@@ -35,7 +38,42 @@
         <a class="btn btn--primary" href="/">回到首页</a>
         <a class="btn btn--ghost" href="/#gallery">翻开图鉴</a>
       </div>
+
+      <!-- 迷路的人只看一句"页面被风吹走了"就没事可做了。
+           这里列出 12 位居民，点谁都有一条路可走。
+           用 fetch 读数据（不加载 store 那套）—— 404 可能在任何路径下被
+           命中，保持"没有本地状态"这件事。取不到就整块不显示，
+           不影响上面那句主文案。 -->
+      <div class="lost" id="lost" hidden>
+        <p class="lost__label">或者，随便挑一位</p>
+        <div class="lost__grid" id="lost-grid"></div>
+      </div>
     </div>
   </main>
+
+  <script type="module">
+    const grid = document.getElementById('lost-grid');
+    const box = document.getElementById('lost');
+    try {
+      const res = await fetch('/assets/data/characters.json');
+      if (res.ok) {
+        const { characters } = await res.json();
+        // c.image 形如 assets/img/works/sakura.webp，缩略图是同目录下的 -400 版本
+        const thumb = (src) => src.replace(/\.webp$/, '-400.webp');
+        grid.innerHTML = characters
+          .map(
+            (c) => `<a class="lost__card" href="/c/${c.id}/">
+              <img src="/${thumb(c.image)}" alt=""
+                   width="400" height="533" loading="lazy" decoding="async">
+              <span class="lost__name">${c.name}</span>
+            </a>`
+          )
+          .join('');
+        box.hidden = false;
+      }
+    } catch {
+      /* 取不到就算了，主文案还在 */
+    }
+  </script>
 </body>
 </html>
